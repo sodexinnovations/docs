@@ -19,6 +19,207 @@ Before you begin, ensure you have:
 
 The Sodex API is built around a **project-centric architecture**. Almost all operations require a project context, making the `project_id` one of the most important parameters you'll work with.
 
+### Request and Response Structure
+
+The Sodex API follows consistent patterns for requests and responses across all endpoints, making it predictable and easy to work with.
+
+#### Query Parameters
+
+Most list endpoints support these standard query parameters for filtering, sorting, and pagination:
+
+<ParamField query="skip" type="integer" default="0">
+  Skip the first n results (used for pagination)
+</ParamField>
+
+<ParamField query="limit" type="integer" default="200">
+  Limit the number of results returned (maximum is always 200)
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort the results by field name. Use `+` for ascending, `-` for descending. No prefix means ascending. Separate multiple fields with commas. Order matters.
+  
+  **Examples:**
+  - `name` - Sort by name ascending
+  - `-created_at` - Sort by creation date descending  
+  - `name,-created_at` - Sort by name ascending, then by date descending
+</ParamField>
+
+<ParamField query="query" type="string">
+  Filter results using query syntax. Use specific operators between field names and values.
+  
+  **Schema:** `field'OPERATOR'value`
+  
+  **Supported Operators:**
+  - `=` (equals)
+  - `!=` (not equals)  
+  - `>` (greater than)
+  - `<` (less than)
+  - `>=` (greater than or equal)
+  - `<=` (less than or equal)
+  - `*` (string contains)
+  - `!` (string does not contain)
+  
+  **Examples:**
+  - `name*Construction` - Find items with "Construction" in the name
+  - `status=active` - Find items with status "active"  
+  - `name*John,address.street=1st Street` - Find items with "John" in name AND living on "1st Street"
+  - `created_at>2024-01-01` - Find items created after January 1, 2024
+</ParamField>
+
+#### Response Structure
+
+All API responses follow a consistent structure with these standard fields:
+
+<ResponseField name="data" type="array | object">
+  Contains the actual response data. For list endpoints, this is an array. For single-item requests (usually by ID), this is the requested object.
+</ResponseField>
+
+<ResponseField name="skip" type="integer">
+  The skip value that was used in the request (for pagination tracking)
+</ResponseField>
+
+<ResponseField name="limit" type="integer">
+  The limit value that was used in the request (for pagination tracking)
+</ResponseField>
+
+<ResponseField name="count" type="integer">
+  Number of items in the current response's `data` array (only present for list responses)
+</ResponseField>
+
+<ResponseField name="total_count" type="integer">
+  Total number of items available across all pages (use this to calculate pagination, only present for list responses)
+</ResponseField>
+
+#### Example API Request with Query Parameters
+
+<CodeGroup>
+```bash cURL with Query Parameters
+curl -X GET "https://api.sodex.cloud/v2/organizations/me/projects?skip=0&limit=5&sort=-created_at&query=name*Construction" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python with Query Parameters
+import requests
+
+params = {
+    'skip': 0,
+    'limit': 5,
+    'sort': '-created_at',  # Sort by creation date, newest first
+    'query': 'name*Construction'  # Only projects with "Construction" in name
+}
+
+response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/projects',
+    headers=headers,
+    params=params
+)
+
+projects = response.json()
+print(f"Found {projects['count']} projects out of {projects['total_count']} total")
+```
+</CodeGroup>
+
+#### Example Response Structure
+
+```json
+{
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439022",
+      "name": "Downtown Construction Project",
+      "description": "Main construction site monitoring",
+      "created_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "507f1f77bcf86cd799439033", 
+      "name": "Infrastructure Construction",
+      "description": "New infrastructure development",
+      "created_at": "2024-01-10T14:30:00Z"
+    }
+  ],
+  "skip": 0,
+  "limit": 5,
+  "count": 2,
+  "total_count": 12
+}
+```
+
+#### Pagination Example
+
+Here's how to implement pagination using the response structure:
+
+<CodeGroup>
+```python Python Pagination
+def get_all_projects(headers, page_size=10):
+    all_projects = []
+    skip = 0
+    
+    while True:
+        params = {
+            'skip': skip,
+            'limit': page_size
+        }
+        
+        response = requests.get(
+            'https://api.sodex.cloud/v2/organizations/me/projects',
+            headers=headers,
+            params=params
+        )
+        
+        data = response.json()
+        all_projects.extend(data['data'])
+        
+        # Check if we've got all items
+        if skip + data['count'] >= data['total_count']:
+            break
+            
+        skip += page_size
+    
+    return all_projects
+
+# Calculate total pages
+def calculate_pages(total_count, page_size):
+    return (total_count + page_size - 1) // page_size
+```
+
+```javascript JavaScript Pagination
+async function getAllProjects(headers, pageSize = 10) {
+  const allProjects = [];
+  let skip = 0;
+  
+  while (true) {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: pageSize.toString()
+    });
+    
+    const response = await fetch(
+      `https://api.sodex.cloud/v2/organizations/me/projects?${params}`,
+      { headers }
+    );
+    
+    const data = await response.json();
+    allProjects.push(...data.data);
+    
+    // Check if we have all items
+    if (skip + data.count >= data.total_count) {
+      break;
+    }
+    
+    skip += pageSize;
+  }
+  
+  return allProjects;
+}
+
+// Calculate total pages
+function calculatePages(totalCount, pageSize) {
+  return Math.ceil(totalCount / pageSize);
+}
+```
+</CodeGroup>
+
 ### Key Concepts
 
 <AccordionGroup>
@@ -71,10 +272,7 @@ print(f"Organization ID: {organization['data']['id']}")
   "data": {
     "id": "507f1f77bcf86cd799439011",
     "name": "Acme Construction Ltd",
-    "created_at": "2024-01-15T09:30:00Z",
-    "settings": {
-      "timezone": "Europe/Berlin"
-    }
+    "created_at": "2024-01-15T09:30:00Z"
   }
 }
 ```
@@ -121,22 +319,19 @@ if projects['data']:
       "id": "507f1f77bcf86cd799439022",
       "name": "Downtown Construction Project",
       "description": "Main construction site monitoring",
-      "created_at": "2024-01-15T10:00:00Z",
-      "status": "active"
+      "created_at": "2024-01-15T10:00:00Z"
     },
     {
       "id": "507f1f77bcf86cd799439033",
       "name": "Infrastructure Survey",
       "description": "Quarterly infrastructure assessment",
-      "created_at": "2024-02-01T14:30:00Z",
-      "status": "active"
+      "created_at": "2024-02-01T14:30:00Z"
     }
   ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 2
-  }
+  "skip": 0,
+  "limit": 10,
+  "count": 2,
+  "total_count": 2
 }
 ```
 
