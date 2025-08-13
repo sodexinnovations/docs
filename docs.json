@@ -17,6 +17,27 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "index",
+              "pages/getting-started"
+            ]
+          },
+          {
+            "group": "Authentication",
+            "pages": [
+              "pages/auth/overview",
+              "pages/auth/flow",
+              "pages/auth/endpoints",
+              "pages/auth/pkce"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "openapi": "openapi.json"
       }

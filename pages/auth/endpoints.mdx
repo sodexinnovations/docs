@@ -1,0 +1,372 @@
+---
+title: "API Endpoints"
+description: "Complete reference for OAuth 2.0 authentication endpoints"
+---
+
+<Note>
+**Client Credentials Required**: All endpoints in this reference require valid `client_id` and `client_secret` credentials obtained from Sodex. Contact [Sodex support](mailto:support@sodex-innovations.com) to register your application if you haven't already.
+</Note>
+
+## Authorization Endpoint
+
+Used to initiate the OAuth authorization flow.
+
+<RequestExample>
+```bash
+GET /oauth/authorize?client_id=your_client_id&redirect_uri=https://your-app.com/callback&response_type=code&scope=sdxapi%20scanace&state=random_state&code_challenge=challenge&code_challenge_method=S256
+```
+</RequestExample>
+
+### Parameters
+
+<ParamField query="client_id" type="string" required>
+  Your application's client ID
+</ParamField>
+
+<ParamField query="redirect_uri" type="string" required>
+  Callback URL for your application
+</ParamField>
+
+<ParamField query="response_type" type="string" required>
+  Must be `code`
+</ParamField>
+
+<ParamField query="scope" type="string" required>
+  Space-separated list of scopes: `sdxapi`, `scanace`
+</ParamField>
+
+<ParamField query="state" type="string" required>
+  Random string for CSRF protection
+</ParamField>
+
+<ParamField query="code_challenge" type="string" required>
+  PKCE code challenge (base64url encoded)
+</ParamField>
+
+<ParamField query="code_challenge_method" type="string" required>
+  `S256` (recommended) or `plain`
+</ParamField>
+
+### Response
+
+Redirects to your `redirect_uri` with:
+
+<ResponseExample>
+```
+https://your-app.com/callback?code=AUTH_CODE&state=random_state
+```
+</ResponseExample>
+
+---
+
+## Token Endpoint
+
+Exchange authorization codes for tokens or refresh existing tokens.
+
+### Authorization Code Exchange
+
+<RequestExample>
+```bash
+curl -X POST https://api.sodex.cloud/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code&code=AUTH_CODE&client_id=your_client_id&client_secret=your_secret&code_verifier=verifier"
+```
+</RequestExample>
+
+#### Parameters
+
+<ParamField body="grant_type" type="string" required>
+  Must be `authorization_code`
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  Authorization code from callback
+</ParamField>
+
+<ParamField body="client_id" type="string" required>
+  Your application's client ID
+</ParamField>
+
+<ParamField body="client_secret" type="string" required>
+  Your application's client secret
+</ParamField>
+
+<ParamField body="code_verifier" type="string" required>
+  Original PKCE code verifier
+</ParamField>
+
+#### Response
+
+<ResponseExample>
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 28800,
+  "token_type": "bearer"
+}
+```
+</ResponseExample>
+
+<ResponseField name="access_token" type="string">
+  JWT access token for API authentication
+</ResponseField>
+
+<ResponseField name="refresh_token" type="string">
+  JWT refresh token for token renewal
+</ResponseField>
+
+<ResponseField name="expires_in" type="number">
+  Token lifetime in seconds
+</ResponseField>
+
+<ResponseField name="token_type" type="string">
+  Always "bearer"
+</ResponseField>
+
+### Token Refresh
+
+<RequestExample>
+```bash
+curl -X POST https://api.sodex.cloud/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=refresh_token&refresh_token=REFRESH_TOKEN&client_id=your_client_id&client_secret=your_secret"
+```
+</RequestExample>
+
+#### Parameters
+
+<ParamField body="grant_type" type="string" required>
+  Must be `refresh_token`
+</ParamField>
+
+<ParamField body="refresh_token" type="string" required>
+  Refresh token from previous response
+</ParamField>
+
+<ParamField body="client_id" type="string" required>
+  Your application's client ID
+</ParamField>
+
+<ParamField body="client_secret" type="string" required>
+  Your application's client secret
+</ParamField>
+
+#### Response
+
+Returns the same format as authorization code exchange with new tokens.
+
+---
+
+## User Information Endpoint
+
+Retrieve authenticated user's profile information.
+
+<RequestExample>
+```bash
+curl -X GET https://api.sodex.cloud/v2/users/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</RequestExample>
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+### Required Scopes
+
+This endpoint requires one of the following scopes:
+- `cloud_base`
+- `guest`
+
+### Response
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "id": "user_12345",
+    "credentials": {
+      "email": "user@example.com"
+    },
+    "license": {
+      "type": "cloud_base",
+      "scope_level": "user"
+    },
+    "organization_id": "org_67890",
+    "is_system_admin": false,
+    "is_organization_admin": false,
+    "can_use_scin_app": true
+  }
+}
+```
+</ResponseExample>
+
+<ResponseField name="data.id" type="string">
+  Unique user identifier
+</ResponseField>
+
+<ResponseField name="data.credentials.email" type="string">
+  User's email address
+</ResponseField>
+
+<ResponseField name="data.license.type" type="string">
+  User's license type (e.g., "cloud_base", "mobile")
+</ResponseField>
+
+<ResponseField name="data.license.scope_level" type="string">
+  License scope level
+</ResponseField>
+
+<ResponseField name="data.organization_id" type="string">
+  User's organization identifier
+</ResponseField>
+
+<ResponseField name="data.is_system_admin" type="boolean">
+  Whether user has system admin privileges
+</ResponseField>
+
+<ResponseField name="data.is_organization_admin" type="boolean">
+  Whether user has organization admin privileges
+</ResponseField>
+
+<ResponseField name="data.can_use_scin_app" type="boolean">
+  Whether user can access specific application features
+</ResponseField>
+
+---
+
+## Alternative Userinfo Endpoint
+
+<Warning>
+The standard OAuth `/userinfo` endpoint is available but not recommended for application integrations as it provides limited information and lacks proper scope validation.
+</Warning>
+
+<RequestExample>
+```bash
+curl -X GET https://api.sodex.cloud/oauth/userinfo \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</RequestExample>
+
+Use the `/v2/users/me` endpoint instead for complete user information.
+
+---
+
+## Logout Endpoint
+
+Invalidate the current session and tokens.
+
+<RequestExample>
+```bash
+curl -X GET https://api.sodex.cloud/oauth/logout \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+</RequestExample>
+
+### Headers
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+### Response
+
+<ResponseExample>
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+</ResponseExample>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+---
+
+## Error Responses
+
+All endpoints may return error responses in the following format:
+
+<ResponseExample>
+```json
+{
+  "detail": "Error description"
+}
+```
+</ResponseExample>
+
+### Common Error Codes
+
+<AccordionGroup>
+  <Accordion title="400 Bad Request">
+    **Invalid client**
+    - Client ID not found or invalid
+    
+    **Invalid client secret**
+    - Client secret is incorrect
+    
+    **Invalid authorization code**
+    - Authorization code is invalid or expired
+    
+    **Invalid code verifier**
+    - PKCE code verifier doesn't match challenge
+    
+    **Invalid grant type**
+    - Unsupported grant type specified
+    
+    **Refresh token is required**
+    - Missing refresh token for refresh flow
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    **Invalid token**
+    - Access token is invalid or expired
+    - Token signature verification failed
+    - Token has been revoked
+  </Accordion>
+
+  <Accordion title="404 Not Found">
+    **User not found**
+    - User associated with token does not exist
+    - User account has been deactivated
+  </Accordion>
+
+  <Accordion title="429 Too Many Requests">
+    **Rate limit exceeded**
+    - Too many requests in a short time period
+    - Check `Retry-After` header for cooldown period
+  </Accordion>
+</AccordionGroup>
+
+## Rate Limiting
+
+All OAuth endpoints implement rate limiting with the following headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests per time window |
+| `X-RateLimit-Remaining` | Remaining requests in current window |
+| `X-RateLimit-Reset` | Unix timestamp when limit resets |
+| `Retry-After` | Seconds to wait before retry (on 429 errors) |
+
+### Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Exponential Backoff" icon="clock">
+    Implement exponential backoff for retry logic
+  </Card>
+  <Card title="Monitor Headers" icon="chart-line">
+    Check rate limit headers in all responses
+  </Card>
+  <Card title="Respect Retry-After" icon="pause">
+    Wait for the specified time on 429 errors
+  </Card>
+  <Card title="Cache Tokens" icon="database">
+    Avoid unnecessary token refresh requests
+  </Card>
+</CardGroup>

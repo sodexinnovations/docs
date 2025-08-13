@@ -1,0 +1,445 @@
+---
+title: "PKCE Implementation"
+description: "Complete guide to implementing Proof Key for Code Exchange (PKCE) for enhanced OAuth security"
+---
+
+## What is PKCE?
+
+PKCE (Proof Key for Code Exchange) is a security extension to OAuth 2.0 that prevents authorization code interception attacks. It's **required** for all Sodex OAuth implementations and provides enhanced security for both public and confidential clients.
+
+## How PKCE Works
+
+<Steps>
+  <Step title="Generate Code Verifier">
+    Create a cryptographically random string
+  </Step>
+  <Step title="Generate Code Challenge">
+    Hash the code verifier using SHA256 (or use plain text)
+  </Step>
+  <Step title="Authorization Request">
+    Send code challenge with authorization request
+  </Step>
+  <Step title="Token Exchange">
+    Send original code verifier with token request
+  </Step>
+  <Step title="Server Verification">
+    Server verifies verifier matches challenge
+  </Step>
+</Steps>
+
+## Code Verifier Requirements
+
+The code verifier must meet these specifications:
+
+- **Length**: 43-128 characters
+- **Characters**: `[A-Z]`, `[a-z]`, `[0-9]`, `-`, `.`, `_`, `~`
+- **Entropy**: Cryptographically random
+- **Uniqueness**: Generate new verifier for each authorization request
+
+## Code Challenge Methods
+
+### S256 Method (Recommended)
+
+Uses SHA256 hash of the code verifier, encoded in base64url:
+
+```
+code_challenge = base64url(sha256(code_verifier))
+```
+
+### Plain Method (Less Secure)
+
+Uses the code verifier directly as the challenge:
+
+```
+code_challenge = code_verifier
+```
+
+<Warning>
+The plain method should only be used when SHA256 is not available. Always prefer S256 for enhanced security.
+</Warning>
+
+## Implementation Examples
+
+### JavaScript
+
+<CodeGroup>
+```javascript Browser
+// Generate cryptographically random code verifier
+function generateCodeVerifier() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return base64URLEncode(array);
+}
+
+// Generate code challenge using S256 method
+async function generateCodeChallenge(verifier) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return base64URLEncode(new Uint8Array(digest));
+}
+
+// Base64URL encoding function
+function base64URLEncode(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const base64 = btoa(String.fromCharCode(...bytes));
+  return base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+// Usage example
+async function initiatePKCEFlow() {
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  
+  // Store code verifier for later use
+  sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+  
+  // Use code challenge in authorization request
+  const authUrl = new URL('https://api.sodex.cloud/oauth/authorize');
+  authUrl.searchParams.set('code_challenge', codeChallenge);
+  authUrl.searchParams.set('code_challenge_method', 'S256');
+  // ... other parameters
+  
+  window.location.href = authUrl.toString();
+}
+```
+
+```javascript Node.js
+const crypto = require('crypto');
+
+// Generate code verifier
+function generateCodeVerifier() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+// Generate code challenge using S256 method
+function generateCodeChallenge(verifier) {
+  return crypto
+    .createHash('sha256')
+    .update(verifier)
+    .digest('base64url');
+}
+
+// Usage example
+function initiatePKCEFlow() {
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = generateCodeChallenge(codeVerifier);
+  
+  console.log('Code Verifier:', codeVerifier);
+  console.log('Code Challenge:', codeChallenge);
+  
+  // Store verifier for token exchange
+  // Use challenge in authorization URL
+}
+```
+</CodeGroup>
+
+### Python
+
+<CodeGroup>
+```python Standard Library
+import secrets
+import hashlib
+import base64
+
+def generate_code_verifier():
+    """Generate a cryptographically random code verifier."""
+    return base64.urlsafe_b64encode(
+        secrets.token_bytes(32)
+    ).decode('utf-8').rstrip('=')
+
+def generate_code_challenge(verifier):
+    """Generate code challenge using S256 method."""
+    digest = hashlib.sha256(verifier.encode('utf-8')).digest()
+    return base64.urlsafe_b64encode(digest).decode('utf-8').rstrip('=')
+
+# Usage example
+def initiate_pkce_flow():
+    code_verifier = generate_code_verifier()
+    code_challenge = generate_code_challenge(code_verifier)
+    
+    print(f"Code Verifier: {code_verifier}")
+    print(f"Code Challenge: {code_challenge}")
+    
+    # Store verifier for token exchange
+    # Use challenge in authorization URL
+    return code_verifier, code_challenge
+```
+
+```python With Requests-OAuthlib
+from authlib.integrations.requests_client import OAuth2Session
+from authlib.oauth2.rfc7636 import create_s256_code_challenge
+
+# Generate PKCE parameters
+code_verifier = OAuth2Session.create_code_verifier()
+code_challenge = create_s256_code_challenge(code_verifier)
+
+# Create OAuth session with PKCE
+client = OAuth2Session(
+    client_id='your_client_id',
+    code_challenge=code_challenge,
+    code_challenge_method='S256'
+)
+
+# Generate authorization URL
+authorization_url, state = client.create_authorization_url(
+    'https://api.sodex.cloud/oauth/authorize',
+    redirect_uri='https://your-app.com/callback',
+    scope='sdxapi scanace'
+)
+
+print(f"Visit: {authorization_url}")
+```
+</CodeGroup>
+
+### Java
+
+```java
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
+
+public class PKCEGenerator {
+    
+    public static String generateCodeVerifier() {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+    
+    public static String generateCodeChallenge(String verifier) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(verifier.getBytes("UTF-8"));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating code challenge", e);
+        }
+    }
+    
+    // Usage example
+    public static void main(String[] args) {
+        String codeVerifier = generateCodeVerifier();
+        String codeChallenge = generateCodeChallenge(codeVerifier);
+        
+        System.out.println("Code Verifier: " + codeVerifier);
+        System.out.println("Code Challenge: " + codeChallenge);
+    }
+}
+```
+
+### PHP
+
+```php
+<?php
+
+function generateCodeVerifier() {
+    return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+}
+
+function generateCodeChallenge($verifier) {
+    return rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+}
+
+// Usage example
+$codeVerifier = generateCodeVerifier();
+$codeChallenge = generateCodeChallenge($codeVerifier);
+
+echo "Code Verifier: " . $codeVerifier . "\n";
+echo "Code Challenge: " . $codeChallenge . "\n";
+
+// Store verifier in session for token exchange
+session_start();
+$_SESSION['pkce_code_verifier'] = $codeVerifier;
+?>
+```
+
+## Authorization Request with PKCE
+
+Include the code challenge in your authorization request:
+
+```http
+GET /oauth/authorize?
+  client_id=your_client_id&
+  redirect_uri=https://your-app.com/callback&
+  response_type=code&
+  scope=sdxapi scanace&
+  state=random_state&
+  code_challenge=CODE_CHALLENGE&
+  code_challenge_method=S256
+```
+
+## Token Exchange with PKCE
+
+Include the original code verifier in your token request:
+
+```http
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&
+code=AUTHORIZATION_CODE&
+client_id=your_client_id&
+client_secret=your_client_secret&
+code_verifier=CODE_VERIFIER
+```
+
+## Security Benefits
+
+<CardGroup cols={2}>
+  <Card title="Prevents Code Interception" icon="shield">
+    Attackers can't use stolen authorization codes without the code verifier
+  </Card>
+  <Card title="Dynamic Challenges" icon="refresh">
+    Each authorization request uses a unique challenge
+  </Card>
+  <Card title="No Network Secrets" icon="lock">
+    Code verifier never travels over the network during authorization
+  </Card>
+  <Card title="Cryptographic Proof" icon="fingerprint">
+    Server cryptographically verifies client identity
+  </Card>
+</CardGroup>
+
+## Validation Process
+
+The server validates PKCE as follows:
+
+<Steps>
+  <Step title="Store Challenge">
+    Server stores code challenge and method during authorization
+  </Step>
+  <Step title="Receive Verifier">
+    Client sends code verifier during token exchange
+  </Step>
+  <Step title="Apply Method">
+    Server applies challenge method to received verifier
+  </Step>
+  <Step title="Compare Results">
+    Server compares computed challenge with stored challenge
+  </Step>
+  <Step title="Grant or Deny">
+    Tokens issued only if challenges match
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<AccordionGroup>
+  <Accordion title="Reusing Code Verifiers">
+    **Problem**: Using the same code verifier for multiple requests
+    
+    **Solution**: Generate a fresh code verifier for each authorization request
+    
+    ```javascript
+    // ❌ Wrong - reusing verifier
+    const globalVerifier = generateCodeVerifier();
+    
+    // ✅ Correct - new verifier each time
+    function startAuthFlow() {
+      const verifier = generateCodeVerifier();
+      // ... use verifier
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Incorrect Base64URL Encoding">
+    **Problem**: Using standard Base64 instead of Base64URL encoding
+    
+    **Solution**: Use Base64URL encoding (replace `+` with `-`, `/` with `_`, remove `=`)
+    
+    ```javascript
+    // ❌ Wrong - standard Base64
+    btoa(String.fromCharCode(...array))
+    
+    // ✅ Correct - Base64URL
+    btoa(String.fromCharCode(...array))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+    ```
+  </Accordion>
+
+  <Accordion title="Storing Verifier Insecurely">
+    **Problem**: Storing code verifier in localStorage or exposing it
+    
+    **Solution**: Use secure, temporary storage appropriate for your platform
+    
+    ```javascript
+    // ❌ Wrong - persistent storage
+    localStorage.setItem('verifier', codeVerifier);
+    
+    // ✅ Correct - session storage
+    sessionStorage.setItem('pkce_verifier', codeVerifier);
+    
+    // ✅ Better - secure HTTP-only cookie (server-side)
+    ```
+  </Accordion>
+
+  <Accordion title="Wrong Challenge Method">
+    **Problem**: Sending incorrect `code_challenge_method` parameter
+    
+    **Solution**: Ensure the method matches your implementation
+    
+    ```javascript
+    // When using SHA256 hashing
+    authUrl.searchParams.set('code_challenge_method', 'S256');
+    
+    // When using plain text (not recommended)
+    authUrl.searchParams.set('code_challenge_method', 'plain');
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Testing Your Implementation
+
+### Verification Steps
+
+1. **Generate Parameters**: Create code verifier and challenge
+2. **Verify Encoding**: Ensure proper Base64URL encoding
+3. **Test Method**: Verify S256 hashing works correctly
+4. **Check Length**: Confirm verifier meets length requirements
+5. **Test Flow**: Complete full authorization flow
+
+### Test Code Challenge Generation
+
+```javascript
+// Test function to verify PKCE implementation
+function testPKCEImplementation() {
+  const verifier = generateCodeVerifier();
+  const challenge = generateCodeChallenge(verifier);
+  
+  console.log('Verifier length:', verifier.length);
+  console.log('Challenge length:', challenge.length);
+  console.log('Verifier valid chars:', /^[A-Za-z0-9\-._~]+$/.test(verifier));
+  console.log('Challenge valid chars:', /^[A-Za-z0-9\-._~]+$/.test(challenge));
+  
+  // Verifier should be 43-128 characters
+  console.log('Verifier length valid:', verifier.length >= 43 && verifier.length <= 128);
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use S256 Method" icon="shield-check">
+    Always use SHA256 hashing unless absolutely impossible
+  </Card>
+  <Card title="Generate Fresh Verifiers" icon="refresh">
+    Create new code verifier for each authorization request
+  </Card>
+  <Card title="Secure Storage" icon="lock">
+    Store code verifier securely and temporarily
+  </Card>
+  <Card title="Validate Implementation" icon="check-circle">
+    Test your PKCE implementation thoroughly before production
+  </Card>
+</CardGroup>
+
+<Info>
+PKCE is mandatory for all Sodex OAuth implementations. The server will reject authorization requests that don't include valid PKCE parameters.
+</Info>

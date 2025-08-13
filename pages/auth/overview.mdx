@@ -1,0 +1,119 @@
+---
+title: "OAuth 2.0 Authentication"
+description: "Secure authentication using OAuth 2.0 with PKCE for accessing Sodex APIs"
+---
+
+## Overview
+
+Sodex provides a comprehensive OAuth 2.0 authentication system with PKCE (Proof Key for Code Exchange) support for secure client authorization. This implementation follows industry standards to ensure secure access to our APIs.
+
+<Warning>
+**Client Registration Required**: Before implementing OAuth 2.0 authentication, your application must be registered with Sodex to obtain the necessary `client_id` and `client_secret` credentials. Please contact [Sodex support](mailto:support@sodex-innovations.com) to register your application and receive your OAuth credentials.
+</Warning>
+
+## Base URL
+
+All authentication requests are made to:
+
+```
+https://api.sodex.cloud
+```
+
+## Supported Features
+
+The Sodex OAuth 2.0 implementation includes:
+
+<CardGroup cols={2}>
+  <Card title="Authorization Code Flow" icon="key">
+    Standard OAuth 2.0 flow with PKCE for enhanced security
+  </Card>
+  <Card title="Token Refresh" icon="refresh">
+    Automatic token renewal using refresh tokens
+  </Card>
+  <Card title="User Information" icon="user">
+    Secure access to user profile and permissions
+  </Card>
+  <Card title="Logout" icon="sign-out">
+    Proper session termination and token invalidation
+  </Card>
+</CardGroup>
+
+## Authentication Process
+
+<Steps>
+  <Step title="Register Your Application">
+    Contact Sodex support to register your application and obtain client credentials
+  </Step>
+  <Step title="Authorization Request">
+    Redirect users to the authorization endpoint with required parameters
+  </Step>
+  <Step title="Token Exchange">
+    Exchange the authorization code for access and refresh tokens
+  </Step>
+  <Step title="API Access">
+    Use the access token to make authenticated API requests
+  </Step>
+</Steps>
+
+## Security Features
+
+### PKCE (Proof Key for Code Exchange)
+
+All authorization flows must implement PKCE for enhanced security:
+- Prevents authorization code interception attacks
+- Required for all client types (public and confidential)
+- Supports both S256 and plain methods (S256 recommended)
+
+### Token Security
+
+- **Short-lived access tokens**: 8 hours in production, 5 minutes in development
+- **Long-lived refresh tokens**: 30 days in production, 10 minutes in development
+- **JWT format**: All tokens use signed JWT with HS256 algorithm
+- **Secure storage**: Tokens should never be exposed in client-side code
+
+## Available Scopes
+
+### Application Scopes
+Request these scopes during authorization:
+
+| Scope | Description |
+|-------|-------------|
+| `sdxapi` | Access to SDX API functionality |
+| `scanace` | Access to application-specific features |
+
+### User Permission Scopes
+These scopes are automatically assigned based on user permissions:
+
+| Scope | Description |
+|-------|-------------|
+| `user` | Basic user access |
+| `guest` | Guest user access |
+| `cloud_base` | Cloud base license |
+| `mobile` | Mobile license |
+| `organization_admin` | Organization administrator |
+| `system_admin` | System administrator |
+
+## Rate Limiting
+
+OAuth endpoints are subject to rate limiting to ensure system stability:
+
+- Implement exponential backoff for retry logic
+- Respect `Retry-After` headers in error responses
+- Monitor rate limit headers in responses
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication Flow" href="/pages/auth/flow" icon="flow">
+    Learn the complete OAuth 2.0 authorization process
+  </Card>
+  <Card title="API Endpoints" href="/pages/auth/endpoints" icon="code">
+    Reference for all authentication endpoints
+  </Card>
+  <Card title="PKCE Implementation" href="/pages/auth/pkce" icon="shield">
+    Complete guide to implementing PKCE security
+  </Card>
+  <Card title="Error Handling" href="/pages/auth/errors" icon="warning">
+    Common errors and troubleshooting guide
+  </Card>
+</CardGroup>
