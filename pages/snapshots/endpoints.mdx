@@ -19,6 +19,10 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ### Get Organization Projects
 
+<Note>
+For complete API reference including request/response schemas, see the [Get Organization Projects](/api-reference/projects/get-my-organizations-projects) endpoint in the API documentation.
+</Note>
+
 Get all projects that the authenticated user is a member of within their organization.
 
 #### Endpoint
@@ -74,11 +78,11 @@ GET /v2/organizations/me/projects
   </Expandable>
 </ResponseField>
 
-<Note>
-For complete API reference including request/response schemas, see the [Get Organization Projects](/api-reference/projects/get-my-organizations-projects) endpoint in the API documentation.
-</Note>
-
 ### Get Project by ID
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project](/api-reference/projects/get-all-projects-in-my-organization) endpoint in the API documentation.
+</Note>
 
 Get a specific project by its unique identifier.
 
@@ -94,20 +98,20 @@ GET /v2/projects/{project_id}
   Unique project identifier (24-character MongoDB ObjectID)
 </ParamField>
 
-<Note>
-For complete API reference including request/response schemas, see the [Get Project](/api-reference/projects/get-project-by-id) endpoint in the API documentation.
-</Note>
-
 ## Snapshots
 
 ### Get Project Snapshots
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project Snapshots](/api-reference/snapshotsv2/get-project-snapshots-v2) endpoint in the API documentation.
+</Note>
 
 Get all snapshots for a specific project that the authenticated user has access to.
 
 #### Endpoint
 
 ```http
-GET /v2/projects/{project_id}/snapshots
+GET /v2/projects/{project_id}/snapshots-v2
 ```
 
 #### Path Parameters
@@ -116,11 +120,11 @@ GET /v2/projects/{project_id}/snapshots
   Unique project identifier (24-character MongoDB ObjectID)
 </ParamField>
 
-<Note>
-For complete API reference including request/response schemas, see the [Get Project Snapshots](/api-reference/snapshots/get-snapshots-by-project-id) endpoint in the API documentation.
-</Note>
-
 ### Create Snapshot
+
+<Note>
+For complete API reference including request/response schemas, see the [Create Snapshot](/api-reference/snapshots/create-snapshot) endpoint in the API documentation.
+</Note>
 
 Create a new snapshot in the specified project. Only cloud-only projects are supported for snapshot uploads.
 
@@ -200,11 +204,11 @@ POST /v2/projects/{project_id}/snapshots
   </Expandable>
 </ResponseField>
 
-<Note>
-For complete API reference including request/response schemas, see the [Create Snapshot](/api-reference/snapshots/create-snapshot) endpoint in the API documentation.
-</Note>
-
 ### Get Snapshot by ID
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Snapshot](/api-reference/snapshotsv2/get-snapshotv2-by-id) endpoint in the API documentation.
+</Note>
 
 Get a specific snapshot by its unique identifier.
 
@@ -219,10 +223,6 @@ GET /v2/snapshots/{snapshot_id}
 <ParamField path="snapshot_id" type="string" required>
   Unique snapshot identifier (24-character MongoDB ObjectID)
 </ParamField>
-
-<Note>
-For complete API reference including request/response schemas, see the [Get Snapshot](/api-reference/snapshots/get-snapshot-by-id) endpoint in the API documentation.
-</Note>
 
 ### Get S3 Upload Credentials
 
