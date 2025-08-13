@@ -1,4 +1,324 @@
 ---
 title: "Getting Started"
-description: "This is how you can get started"
+description: "Learn how to start working with the Sodex API - from authentication to understanding the project-based structure"
 ---
+
+## Welcome to the Sodex API
+
+This guide will walk you through the essential concepts and first steps needed to successfully integrate with the Sodex API. You'll learn about the project-centric architecture and how to navigate the API structure.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Valid authentication credentials (see [Authentication Guide](/pages/auth/overview))
+- Access to at least one organization and project
+- A basic understanding of REST APIs and HTTP requests
+
+## Understanding the API Structure
+
+The Sodex API is built around a **project-centric architecture**. Almost all operations require a project context, making the `project_id` one of the most important parameters you'll work with.
+
+### Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Organizations">
+    Organizations are the top-level containers in the Sodex ecosystem. Every user belongs to exactly one organization and organizations contain projects.
+  </Accordion>
+
+  <Accordion title="Projects">
+    Projects are the primary workspace units where all data and operations are organized. Most API endpoints require a `project_id` parameter to specify which project context you're working in.
+  </Accordion>
+
+  <Accordion title="Object IDs">
+    All resources in the Sodex API use MongoDB ObjectIDs - 24-character hexadecimal strings (e.g., `507f1f77bcf86cd799439011`). These IDs are globally unique and immutable.
+  </Accordion>
+</AccordionGroup>
+
+## Step 1: Get Your Organization
+
+Start by fetching information about your current organization. This helps you understand your organizational context and available resources.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/organizations/me" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me',
+    headers=headers
+)
+
+organization = response.json()
+print(f"Organization: {organization['data']['name']}")
+print(f"Organization ID: {organization['data']['id']}")
+```
+</CodeGroup>
+
+**Example Response:**
+```json
+{
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "name": "Acme Construction Ltd",
+    "created_at": "2024-01-15T09:30:00Z",
+    "settings": {
+      "timezone": "Europe/Berlin"
+    }
+  }
+}
+```
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Current Organization](/api-reference/organizations/get-current-organization) endpoint in the API documentation.
+</Note>
+
+## Step 2: Fetch Your Projects
+
+Next, retrieve all projects you have access to within your organization. This is crucial because you'll need a `project_id` for most subsequent API operations.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/organizations/me/projects" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/projects',
+    headers=headers
+)
+
+projects = response.json()
+
+print("Available Projects:")
+for project in projects['data']:
+    print(f"- {project['name']} (ID: {project['id']})")
+
+# Store the first project ID for later use
+if projects['data']:
+    project_id = projects['data'][0]['id']
+    print(f"\nUsing project ID: {project_id}")
+```
+</CodeGroup>
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439022",
+      "name": "Downtown Construction Project",
+      "description": "Main construction site monitoring",
+      "created_at": "2024-01-15T10:00:00Z",
+      "status": "active"
+    },
+    {
+      "id": "507f1f77bcf86cd799439033",
+      "name": "Infrastructure Survey",
+      "description": "Quarterly infrastructure assessment",
+      "created_at": "2024-02-01T14:30:00Z",
+      "status": "active"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 2
+  }
+}
+```
+
+<Note>
+For complete API reference including request/response schemas, see the [Get All Projects in My Organization](/api-reference/projects/get-all-projects-in-my-organization) endpoint in the API documentation.
+</Note>
+
+## Understanding IDs and Their Importance
+
+### MongoDB ObjectIDs
+
+All resource identifiers in the Sodex API are MongoDB ObjectIDs with these characteristics:
+
+- **Format**: 24-character hexadecimal string
+- **Example**: `507f1f77bcf86cd799439011`
+- **Uniqueness**: Globally unique across the entire system
+- **Immutability**: Never change once assigned
+
+### The Critical Role of `project_id`
+
+The `project_id` is the most important parameter in the Sodex API because:
+
+1. **Context Provider**: It tells the API which project you're working with
+2. **Access Control**: Ensures you can only access data you have permissions for
+3. **Data Isolation**: Keeps project data separate and organized
+4. **Required Parameter**: Most endpoints require it in the URL path
+
+## Project-Centric API Design
+
+Almost everything in the Sodex API is **project-referenced**. Here's why this matters:
+
+### Examples of Project-Centric Endpoints
+
+```http
+# Get snapshots for a specific project
+GET /v2/projects/{project_id}/snapshots-v2
+
+# Create a snapshot in a specific project
+POST /v2/projects/{project_id}/snapshots
+
+# Get project-specific data
+GET /v2/projects/{project_id}/data
+
+# Access project settings
+GET /v2/projects/{project_id}/settings
+```
+
+### Why Project Context Matters
+
+<Steps>
+  <Step title="Data Organization">
+    All snapshots, scans, and related data are organized within projects. Without a project context, the API doesn't know which dataset you want to work with.
+  </Step>
+  
+  <Step title="Permission Management">
+    Your access to data is controlled at the project level. The `project_id` ensures you can only access projects you're a member of.
+  </Step>
+  
+  <Step title="Resource Isolation">
+    Projects provide clear boundaries between different workflows, teams, and datasets.
+  </Step>
+  
+  <Step title="Billing and Analytics">
+    Usage tracking and billing are often organized by project, making the project context essential for these operations.
+  </Step>
+</Steps>
+
+## Practical Example: Complete Workflow
+
+Here's a complete example showing how to use the organization and project information:
+
+<CodeGroup>
+```python Python
+import requests
+
+# Setup
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+base_url = 'https://api.sodex.cloud/v2'
+
+# Step 1: Get organization info
+org_response = requests.get(f'{base_url}/organizations/me', headers=headers)
+organization = org_response.json()['data']
+print(f"Working with organization: {organization['name']}")
+
+# Step 2: Get available projects
+projects_response = requests.get(f'{base_url}/organizations/me/projects', headers=headers)
+projects = projects_response.json()['data']
+
+if not projects:
+    print("No projects available. Contact your administrator.")
+    exit()
+
+# Step 3: Select a project (use first available)
+selected_project = projects[0]
+project_id = selected_project['id']
+print(f"Selected project: {selected_project['name']} (ID: {project_id})")
+
+# Step 4: Now you can make project-specific API calls
+snapshots_response = requests.get(
+    f'{base_url}/projects/{project_id}/snapshots-v2', 
+    headers=headers
+)
+snapshots = snapshots_response.json()
+print(f"Found {len(snapshots.get('data', []))} snapshots in this project")
+
+# The project_id is now your key to accessing all project-related data
+```
+
+```javascript JavaScript
+const baseUrl = 'https://api.sodex.cloud/v2';
+const headers = {
+  'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+  'Content-Type': 'application/json'
+};
+
+async function getStarted() {
+  try {
+    // Step 1: Get organization
+    const orgResponse = await fetch(`${baseUrl}/organizations/me`, { headers });
+    const organization = await orgResponse.json();
+    console.log(`Organization: ${organization.data.name}`);
+
+    // Step 2: Get projects
+    const projectsResponse = await fetch(`${baseUrl}/organizations/me/projects`, { headers });
+    const projects = await projectsResponse.json();
+    
+    if (projects.data.length === 0) {
+      throw new Error('No projects available');
+    }
+
+    // Step 3: Select project
+    const projectId = projects.data[0].id;
+    console.log(`Using project: ${projects.data[0].name} (${projectId})`);
+
+    // Step 4: Make project-specific calls
+    const snapshotsResponse = await fetch(`${baseUrl}/projects/${projectId}/snapshots-v2`, { headers });
+    const snapshots = await snapshotsResponse.json();
+    console.log(`Found ${snapshots.data?.length || 0} snapshots`);
+
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+getStarted();
+```
+</CodeGroup>
+
+## Best Practices
+
+1. **Always Store Project IDs**: Cache the project IDs you frequently work with to avoid repeated API calls
+2. **Handle Multiple Projects**: If you have access to multiple projects, implement project selection in your application
+3. **Validate Access**: Always check that API responses are successful before proceeding
+4. **Use Descriptive Variables**: Store IDs in clearly named variables like `project_id`, `organization_id`
+5. **Error Handling**: Implement proper error handling for cases where you don't have access to expected resources
+
+## Common Pitfalls to Avoid
+
+<Warning>
+**Missing Project Context**: Don't forget that most endpoints require a `project_id`. If you get 404 errors, verify you're using the correct project ID and have access to that project.
+</Warning>
+
+<Warning>
+**Hardcoded IDs**: Avoid hardcoding project IDs in your application. Always fetch them dynamically as project access can change over time.
+</Warning>
+
+<Warning>
+**Wrong ID Format**: Ensure you're using the full 24-character ObjectID format. Shorter or longer strings will result in validation errors.
+</Warning>
+
+## Next Steps
+
+Now that you understand the basics:
+
+1. **Explore Authentication**: Learn about different authentication methods in the [Authentication Guide](/pages/auth/overview)
+2. **Work with Snapshots**: Try the [Snapshot Upload Workflow](/pages/snapshots/overview) to upload point cloud data
+3. **API Reference**: Browse the complete [API Reference](/api-reference) for detailed endpoint documentation
+4. **Error Handling**: Familiarize yourself with common error scenarios and status codes
+
+<Note>
+Remember: When in doubt, start with getting your organization and projects. These two steps provide the foundation for all other API operations in the Sodex platform.
+</Note>

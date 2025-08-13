@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "/v2"
+      "url": "https://api.sodex.cloud/v2"
     }
   ],
   "paths": {
