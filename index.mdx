@@ -1,4 +1,143 @@
 ---
-title: "Hello World"
-description: "This is the introduction to the documentation"
+title: "Sodex API Documentation"
+description: "Complete guide to integrating with the Sodex platform - from authentication to data retrieval"
 ---
+
+## Welcome to the Sodex API
+
+The Sodex API provides powerful tools for managing projects, uploading point cloud data, and retrieving measurements from the Sodex platform. This documentation will guide you through everything you need to know to successfully integrate with our API.
+
+## Quick Start
+
+New to the Sodex API? Start here to understand the fundamentals:
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" icon="rocket" href="/pages/getting-started">
+    Learn about API structure, authentication, and the project-centric design. Essential reading for all developers.
+  </Card>
+  <Card title="Authentication" icon="shield-halved" href="/pages/auth/overview">
+    Understand authentication methods, OAuth flows, and security best practices.
+  </Card>
+</CardGroup>
+
+## Core Workflows
+
+Once you understand the basics, explore these key workflows:
+
+<CardGroup cols={2}>
+  <Card title="Snapshot Upload" icon="cloud-arrow-up" href="/pages/snapshots/overview">
+    Upload point cloud data through a structured workflow - from project selection to S3 upload and commit.
+  </Card>
+  <Card title="Measurements Retrieval" icon="chart-line" href="/pages/measurements/overview">
+    Access measurement data using three flexible approaches: organization-wide, project-specific, or layer-based.
+  </Card>
+</CardGroup>
+
+## Key Concepts
+
+Understanding these fundamental concepts will help you work effectively with the Sodex API:
+
+### Project-Centric Architecture
+
+Almost every operation in the Sodex API requires a project context. Projects are containers that organize your data and control access permissions.
+
+- **Organizations** contain multiple projects
+- **Projects** contain snapshots, measurements, and other data
+- **Project IDs** are required for most API operations
+
+### Consistent API Patterns
+
+All endpoints follow the same patterns for:
+
+- **Authentication**: Bearer token authentication
+- **Pagination**: `skip`, `limit`, `total_count` fields
+- **Filtering**: Query syntax with operators like `=`, `>`, `*`
+- **Sorting**: Field-based sorting with `+`/`-` prefixes
+
+### Data Types
+
+The platform handles several key data types:
+
+- **Snapshots**: Point cloud data uploads with metadata
+- **Measurements**: Sensor data organized by layers and projects
+- **Projects**: Organizational containers for all data
+- **Organizations**: Top-level groupings for users and projects
+
+## API Reference
+
+<Card title="Complete API Reference" icon="book" href="/api-reference">
+  Interactive OpenAPI documentation with all endpoints, request/response schemas, and live testing capabilities.
+</Card>
+
+## Documentation Sections
+
+### 🚀 Getting Started
+- **[Getting Started Guide](/pages/getting-started)** - API structure, projects, and IDs
+- **[Authentication Overview](/pages/auth/overview)** - Authentication concepts and methods
+- **[Authentication Flow](/pages/auth/flow)** - OAuth implementation guide
+- **[Authentication Endpoints](/pages/auth/endpoints)** - Endpoint reference with examples
+
+### 📊 Data Upload
+- **[Snapshot Upload Overview](/pages/snapshots/overview)** - Understanding the upload workflow
+- **[Snapshot Upload Workflow](/pages/snapshots/workflow)** - Step-by-step implementation guide
+- **[Snapshot Upload Endpoints](/pages/snapshots/endpoints)** - API reference with examples
+
+### 📈 Data Retrieval
+- **[Measurements Overview](/pages/measurements/overview)** - Three approaches to accessing measurements
+- **[Measurements Workflow](/pages/measurements/workflow)** - Complete implementation examples
+
+## Common Integration Patterns
+
+<AccordionGroup>
+  <Accordion title="Real-time Monitoring">
+    Build dashboards that monitor current data across your organization using organization-level measurement endpoints with recent timestamp filtering.
+  </Accordion>
+
+  <Accordion title="Project-Specific Applications">
+    Create applications focused on specific projects by using project-scoped endpoints for both data upload and retrieval.
+  </Accordion>
+
+  <Accordion title="Data Integration">
+    Extract measurement data for external analysis using layer-based access for specific data types and efficient pagination.
+  </Accordion>
+</AccordionGroup>
+
+## Important Notes
+
+<Warning>
+**Pagination Awareness**: All list endpoints return a maximum of 200 items by default. Always check `total_count` vs `count` to ensure you're not missing data. Implement pagination for complete data retrieval.
+</Warning>
+
+<Note>
+**Integration-Specific Endpoints**: Some workflows (like snapshot uploads) may receive dedicated, customized endpoints for specific integrations. Contact Sodex directly for integration-specific requirements.
+</Note>
+
+## Getting Help
+
+- **[Interactive API Reference](/api-reference)** - Test endpoints directly in your browser
+- **[Support](mailto:support@sodex-innovations.com)** - Contact our support team
+- **[Help Center](https://sodexinnovations.zendesk.com/hc/en-us)** - Browse our knowledge base
+
+## Next Steps
+
+Ready to start building? Here's your recommended path:
+
+<Steps>
+  <Step title="Read Getting Started">
+    Understand the API structure and project-centric design
+  </Step>
+  <Step title="Set Up Authentication">
+    Implement OAuth flow and obtain access tokens
+  </Step>
+  <Step title="Explore Your Data">
+    Get your organization and projects to understand your available data
+  </Step>
+  <Step title="Choose Your Workflow">
+    Decide whether you need to upload snapshots, retrieve measurements, or both
+  </Step>
+  <Step title="Implement & Test">
+    Use the workflow guides and API reference to build your integration
+  </Step>
+</Steps>
+
+Start your integration journey with the **[Getting Started Guide](/pages/getting-started)** and discover the power of the Sodex platform.
