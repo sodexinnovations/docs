@@ -1,0 +1,577 @@
+---
+title: "Measurements Workflow Guide"
+description: "Step-by-step guide for retrieving measurements using all three available approaches"
+---
+
+## Complete Measurements Workflow
+
+This guide provides detailed implementation examples for all three approaches to retrieving measurements from the Sodex platform. Each approach is suited for different use cases and data access patterns.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- Valid authentication credentials (see [Authentication Guide](/pages/auth/overview))
+- Understanding of the API structure (see [Getting Started](/pages/getting-started))
+- Access to at least one organization and project
+
+## Important: Pagination Considerations
+
+<Warning>
+**Default Limit is 200 Items**: All measurement endpoints return a maximum of 200 items by default. If you have more than 200 measurements, you must implement pagination to retrieve all data. Without proper pagination, you might think data is missing when it's actually just on subsequent pages.
+
+Always check the `total_count` field in the response to see if there are more items available than what's returned in the current page.
+</Warning>
+
+## Approach 1: Organization-Level Measurements
+
+Retrieve all measurements across your entire organization. This approach provides the broadest view of your measurement data.
+
+### When to Use Organization-Level Access
+
+- Building organization-wide dashboards
+- Performing cross-project analytics
+- Generating compliance reports
+- Creating executive summaries
+
+### Implementation
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Organization Measurements](/api-reference/layered-measurements/get-my-organization-measurements) endpoint in the API documentation.
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/organizations/me/measurements" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+# Get all organization measurements
+response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/measurements',
+    headers=headers
+)
+
+measurements = response.json()
+print(f"Found {measurements['count']} measurements across organization")
+
+# Optional: Filter and paginate
+params = {
+    'limit': 50,
+    'sort': '-created_at',
+    'query': 'type=temperature'  # Example: only temperature measurements
+}
+
+filtered_response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/measurements',
+    headers=headers,
+    params=params
+)
+```
+
+```javascript JavaScript
+const headers = {
+  'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+  'Content-Type': 'application/json'
+};
+
+async function getOrganizationMeasurements() {
+  try {
+    // Get all organization measurements
+    const response = await fetch(
+      'https://api.sodex.cloud/v2/organizations/me/measurements',
+      { headers }
+    );
+    
+    const measurements = await response.json();
+    console.log(`Found ${measurements.count} measurements`);
+    
+    // Optional: Filter for specific measurement types
+    const filteredResponse = await fetch(
+      'https://api.sodex.cloud/v2/organizations/me/measurements?query=type=temperature&limit=50',
+      { headers }
+    );
+    
+    const filteredMeasurements = await filteredResponse.json();
+    return filteredMeasurements.data;
+    
+  } catch (error) {
+    console.error('Error fetching organization measurements:', error);
+  }
+}
+```
+</CodeGroup>
+
+
+
+## Approach 2: Project-Level Measurements
+
+Retrieve measurements within a specific project context. This approach provides focused access to project-specific data.
+
+### When to Use Project-Level Access
+
+- Working within a known project scope
+- Building project-specific applications
+- Analyzing data for a particular site or initiative
+- When you need all measurement types for one project
+
+### Implementation
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project Measurements](/api-reference/layered-measurements/get-project-measurements) endpoint in the API documentation.
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/projects/{project_id}/measurements" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+# First, get your projects (as shown in Getting Started guide)
+projects_response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/projects',
+    headers=headers
+)
+projects = projects_response.json()
+
+if projects['data']:
+    project_id = projects['data'][0]['id']
+    print(f"Getting measurements for project: {projects['data'][0]['name']}")
+    
+    # Get project measurements
+    measurements_response = requests.get(
+        f'https://api.sodex.cloud/v2/projects/{project_id}/measurements',
+        headers=headers
+    )
+    
+    measurements = measurements_response.json()
+    print(f"Found {measurements['count']} measurements in project")
+    
+    # Optional: Apply filters
+    params = {
+        'sort': '-created_at',
+        'query': 'value>20,unit=celsius',  # Temperature > 20°C
+        'limit': 100
+    }
+    
+    filtered_response = requests.get(
+        f'https://api.sodex.cloud/v2/projects/{project_id}/measurements',
+        headers=headers,
+        params=params
+    )
+```
+
+```javascript JavaScript
+async function getProjectMeasurements(projectId) {
+  try {
+    const response = await fetch(
+      `https://api.sodex.cloud/v2/projects/${projectId}/measurements`,
+      { headers }
+    );
+    
+    const measurements = await response.json();
+    console.log(`Found ${measurements.count} measurements in project`);
+    
+    // Example: Get recent high-value measurements
+    const recentHighValues = await fetch(
+      `https://api.sodex.cloud/v2/projects/${projectId}/measurements?query=value>50&sort=-created_at&limit=20`,
+      { headers }
+    );
+    
+    return await recentHighValues.json();
+    
+  } catch (error) {
+    console.error('Error fetching project measurements:', error);
+  }
+}
+
+// Usage with project selection
+async function getMeasurementsForProject() {
+  // Get projects first
+  const projectsResponse = await fetch(
+    'https://api.sodex.cloud/v2/organizations/me/projects',
+    { headers }
+  );
+  const projects = await projectsResponse.json();
+  
+  if (projects.data.length > 0) {
+    const projectId = projects.data[0].id;
+    return await getProjectMeasurements(projectId);
+  }
+}
+```
+</CodeGroup>
+
+## Approach 3: Layer-Based Measurements
+
+Access measurements through a two-step process: first discover measurement layers, then retrieve measurements for specific layers. This provides the most granular control.
+
+### When to Use Layer-Based Access
+
+- Need specific measurement types only
+- Working with large datasets requiring efficient filtering
+- Building specialized analysis tools
+- Processing different measurement types separately
+
+### Step 3.1: Get Project Measurement Layers
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project Measurement Layers](/api-reference/measurementlayers/get-project-measurementlayers) endpoint in the API documentation.
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/projects/{project_id}/measurement-layers" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+# Get available measurement layers for a project
+layers_response = requests.get(
+    f'https://api.sodex.cloud/v2/projects/{project_id}/measurement-layers',
+    headers=headers
+)
+
+layers = layers_response.json()
+print(f"Found {layers['count']} measurement layers")
+
+# Display available layers
+for layer in layers['data']:
+    print(f"- {layer['name']} (ID: {layer['id']}, Type: {layer['type']})")
+
+# Select a specific layer (e.g., first one)
+if layers['data']:
+    selected_layer = layers['data'][0]
+    layer_id = selected_layer['id']
+    print(f"Selected layer: {selected_layer['name']}")
+```
+
+```javascript JavaScript
+async function getMeasurementLayers(projectId) {
+  try {
+    const response = await fetch(
+      `https://api.sodex.cloud/v2/projects/${projectId}/measurement-layers`,
+      { headers }
+    );
+    
+    const layers = await response.json();
+    console.log(`Found ${layers.count} measurement layers`);
+    
+    // Display layer information
+    layers.data.forEach(layer => {
+      console.log(`- ${layer.name} (ID: ${layer.id}, Type: ${layer.type})`);
+    });
+    
+    return layers.data;
+    
+  } catch (error) {
+    console.error('Error fetching measurement layers:', error);
+  }
+}
+```
+</CodeGroup>
+
+
+
+### Step 3.2: Get Measurements for Specific Layer
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Measurement Layer Measurements](/api-reference/layered-measurements/get-measurement-layer-measurements) endpoint in the API documentation.
+</Note>
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/measurement-layers/{layer_id}/measurements" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+# Get measurements for the selected layer
+layer_measurements_response = requests.get(
+    f'https://api.sodex.cloud/v2/measurement-layers/{layer_id}/measurements',
+    headers=headers
+)
+
+layer_measurements = layer_measurements_response.json()
+print(f"Found {layer_measurements['count']} measurements in layer")
+
+# Optional: Filter layer measurements
+params = {
+    'sort': '-created_at',
+    'query': 'value>15,value<30',  # Values between 15 and 30
+    'limit': 50
+}
+
+filtered_layer_response = requests.get(
+    f'https://api.sodex.cloud/v2/measurement-layers/{layer_id}/measurements',
+    headers=headers,
+    params=params
+)
+
+# Process measurements
+for measurement in filtered_layer_response.json()['data']:
+    print(f"Measurement: {measurement['value']} {measurement['unit']} at {measurement['created_at']}")
+```
+
+```javascript JavaScript
+async function getLayerMeasurements(layerId, filters = {}) {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (filters.sort) params.append('sort', filters.sort);
+    if (filters.query) params.append('query', filters.query);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    
+    const url = `https://api.sodex.cloud/v2/measurement-layers/${layerId}/measurements?${params}`;
+    
+    const response = await fetch(url, { headers });
+    const measurements = await response.json();
+    
+    console.log(`Found ${measurements.count} measurements in layer`);
+    return measurements.data;
+    
+  } catch (error) {
+    console.error('Error fetching layer measurements:', error);
+  }
+}
+
+// Complete layer-based workflow
+async function getLayerBasedMeasurements(projectId) {
+  // Step 3.1: Get measurement layers
+  const layers = await getMeasurementLayers(projectId);
+  
+  if (layers && layers.length > 0) {
+    // Step 3.2: Get measurements for each layer (or specific ones)
+    const temperatureLayer = layers.find(layer => layer.type === 'temperature');
+    
+    if (temperatureLayer) {
+      const measurements = await getLayerMeasurements(temperatureLayer.id, {
+        sort: '-created_at',
+        query: 'value>20',
+        limit: 100
+      });
+      
+      return measurements;
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Complete Example: Multi-Approach Workflow
+
+Here's a comprehensive example that demonstrates all three approaches in a single workflow:
+
+<CodeGroup>
+```python Python Complete Example
+import requests
+from datetime import datetime
+
+class MeasurementsClient:
+    def __init__(self, access_token):
+        self.headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        self.base_url = 'https://api.sodex.cloud/v2'
+    
+    def get_organization_measurements(self, filters=None):
+        """Approach 1: Organization-level measurements"""
+        params = filters or {}
+        response = requests.get(
+            f'{self.base_url}/organizations/me/measurements',
+            headers=self.headers,
+            params=params
+        )
+        return response.json()
+    
+    def get_project_measurements(self, project_id, filters=None):
+        """Approach 2: Project-level measurements"""
+        params = filters or {}
+        response = requests.get(
+            f'{self.base_url}/projects/{project_id}/measurements',
+            headers=self.headers,
+            params=params
+        )
+        return response.json()
+    
+    def get_measurement_layers(self, project_id):
+        """Approach 3.1: Get measurement layers"""
+        response = requests.get(
+            f'{self.base_url}/projects/{project_id}/measurement-layers',
+            headers=self.headers
+        )
+        return response.json()
+    
+    def get_layer_measurements(self, layer_id, filters=None):
+        """Approach 3.2: Get layer measurements"""
+        params = filters or {}
+        response = requests.get(
+            f'{self.base_url}/measurement-layers/{layer_id}/measurements',
+            headers=self.headers,
+            params=params
+        )
+        return response.json()
+    
+    def analyze_measurements(self):
+        """Complete analysis using all approaches"""
+        print("=== Measurements Analysis ===")
+        
+        # Get organization overview
+        org_measurements = self.get_organization_measurements({'limit': 10})
+        print(f"Organization total: {org_measurements['total_count']} measurements")
+        
+        # Get projects
+        projects_response = requests.get(
+            f'{self.base_url}/organizations/me/projects',
+            headers=self.headers
+        )
+        projects = projects_response.json()
+        
+        for project in projects['data'][:2]:  # Analyze first 2 projects
+            project_id = project['id']
+            print(f"\n--- Project: {project['name']} ---")
+            
+            # Approach 2: Project measurements
+            project_measurements = self.get_project_measurements(project_id)
+            print(f"Project measurements: {project_measurements['total_count']}")
+            
+            # Approach 3: Layer-based analysis
+            layers = self.get_measurement_layers(project_id)
+            print(f"Measurement layers: {layers['count']}")
+            
+            for layer in layers['data']:
+                layer_measurements = self.get_layer_measurements(
+                    layer['id'], 
+                    {'limit': 5, 'sort': '-created_at'}
+                )
+                print(f"  - {layer['name']}: {layer_measurements['total_count']} measurements")
+
+# Usage
+client = MeasurementsClient('YOUR_ACCESS_TOKEN')
+client.analyze_measurements()
+```
+
+```javascript JavaScript Complete Example
+class MeasurementsClient {
+  constructor(accessToken) {
+    this.headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    };
+    this.baseUrl = 'https://api.sodex.cloud/v2';
+  }
+  
+  async getOrganizationMeasurements(filters = {}) {
+    const params = new URLSearchParams(filters);
+    const response = await fetch(
+      `${this.baseUrl}/organizations/me/measurements?${params}`,
+      { headers: this.headers }
+    );
+    return await response.json();
+  }
+  
+  async getProjectMeasurements(projectId, filters = {}) {
+    const params = new URLSearchParams(filters);
+    const response = await fetch(
+      `${this.baseUrl}/projects/${projectId}/measurements?${params}`,
+      { headers: this.headers }
+    );
+    return await response.json();
+  }
+  
+  async getMeasurementLayers(projectId) {
+    const response = await fetch(
+      `${this.baseUrl}/projects/${projectId}/measurement-layers`,
+      { headers: this.headers }
+    );
+    return await response.json();
+  }
+  
+  async getLayerMeasurements(layerId, filters = {}) {
+    const params = new URLSearchParams(filters);
+    const response = await fetch(
+      `${this.baseUrl}/measurement-layers/${layerId}/measurements?${params}`,
+      { headers: this.headers }
+    );
+    return await response.json();
+  }
+  
+  async analyzeMeasurements() {
+    console.log('=== Measurements Analysis ===');
+    
+    try {
+      // Organization overview
+      const orgMeasurements = await this.getOrganizationMeasurements({limit: '10'});
+      console.log(`Organization total: ${orgMeasurements.total_count} measurements`);
+      
+      // Get projects
+      const projectsResponse = await fetch(
+        `${this.baseUrl}/organizations/me/projects`,
+        { headers: this.headers }
+      );
+      const projects = await projectsResponse.json();
+      
+      // Analyze each project
+      for (const project of projects.data.slice(0, 2)) {
+        console.log(`\n--- Project: ${project.name} ---`);
+        
+        // Project measurements
+        const projectMeasurements = await this.getProjectMeasurements(project.id);
+        console.log(`Project measurements: ${projectMeasurements.total_count}`);
+        
+        // Layer analysis
+        const layers = await this.getMeasurementLayers(project.id);
+        console.log(`Measurement layers: ${layers.count}`);
+        
+        for (const layer of layers.data) {
+          const layerMeasurements = await this.getLayerMeasurements(layer.id, {
+            limit: '5',
+            sort: '-created_at'
+          });
+          console.log(`  - ${layer.name}: ${layerMeasurements.total_count} measurements`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Analysis error:', error);
+    }
+  }
+}
+
+// Usage
+const client = new MeasurementsClient('YOUR_ACCESS_TOKEN');
+client.analyzeMeasurements();
+```
+</CodeGroup>
+
+## Best Practices
+
+1. **Choose the Right Approach**: Start with the most specific scope that meets your needs
+2. **Use Filtering**: Apply query parameters to reduce data transfer and improve performance
+3. **Always Implement Pagination**: **Critical** - The default limit is 200 items. Always check `total_count` vs `count` to determine if more data is available. Many developers mistakenly think data is missing when they simply haven't implemented pagination.
+4. **Check Total Count**: Before assuming you have all data, verify that `count` equals `total_count` in the response
+5. **Cache Layer Information**: Store layer IDs and metadata to avoid repeated API calls
+6. **Handle Errors Gracefully**: Implement proper error handling for network and authentication issues
+7. **Monitor Rate Limits**: Be mindful of API rate limits when processing large amounts of data
+
+
+
+## Next Steps
+
+- **[Measurements Overview](/pages/measurements/overview)** - Understanding the measurement system
+- **[API Reference](/api-reference)** - Complete endpoint documentation  
+- **[Getting Started](/pages/getting-started)** - Learn about API structure and authentication

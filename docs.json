@@ -42,6 +42,13 @@
               "pages/snapshots/workflow",
               "pages/snapshots/endpoints"
             ]
+          },
+          {
+            "group": "Measurements",
+            "pages": [
+              "pages/measurements/overview",
+              "pages/measurements/workflow"
+            ]
           }
         ]
       },

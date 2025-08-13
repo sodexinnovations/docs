@@ -1,0 +1,139 @@
+---
+title: "Measurements Overview"
+description: "Learn about the different approaches to retrieving measurements from the Sodex platform"
+---
+
+## Overview
+
+The Sodex platform provides multiple ways to access measurement data depending on your specific needs and the scope of data you want to retrieve. This flexibility allows you to efficiently access measurements at different organizational levels.
+
+## Understanding Measurements
+
+Measurements in the Sodex platform represent data points collected from various sources such as sensors, surveys, or other data collection methods. They are organized hierarchically to provide flexible access patterns based on your use case.
+
+## Three Approaches to Access Measurements
+
+The platform offers three distinct approaches to retrieve measurement data, each suited for different scenarios:
+
+<AccordionGroup>
+  <Accordion title="Organization-Level Measurements">
+    **Best for:** Getting a comprehensive view of all measurements across your entire organization
+    
+    **Use cases:**
+    - Organizational reporting and analytics
+    - Cross-project analysis
+    - Executive dashboards
+    - Compliance reporting across all projects
+    
+    **Access:** Retrieve all measurements that your organization has access to, spanning across multiple projects.
+  </Accordion>
+
+  <Accordion title="Project-Level Measurements">
+    **Best for:** Focusing on measurements within a specific project context
+    
+    **Use cases:**
+    - Project-specific analysis
+    - Project progress tracking
+    - Targeted data exports
+    - Project team dashboards
+    
+    **Access:** Retrieve measurements associated with a particular project, providing focused data for project-specific workflows.
+  </Accordion>
+
+  <Accordion title="Layer-Based Measurements">
+    **Best for:** Fine-grained control over specific measurement layers and types
+    
+    **Use cases:**
+    - Detailed measurement analysis
+    - Layer-specific processing
+    - Custom filtering and organization
+    - Technical analysis workflows
+    
+    **Access:** First discover available measurement layers within a project, then retrieve measurements for specific layers you're interested in.
+  </Accordion>
+</AccordionGroup>
+
+## Choosing the Right Approach
+
+Select your approach based on the scope and specificity of your data needs:
+
+### Start with Organization-Level When:
+- You need a broad overview across multiple projects
+- Building organization-wide reports or dashboards
+- Performing cross-project comparisons
+- You're unsure which specific projects contain relevant data
+
+### Use Project-Level When:
+- You're working within a specific project context
+- You already know which project contains your target data
+- Building project-specific applications or reports
+- You need all measurement types within a single project
+
+### Choose Layer-Based When:
+- You need specific types of measurements only
+- Working with large datasets and need efficient filtering
+- Building specialized analysis tools
+- You want to process different measurement types separately
+
+## Data Hierarchy
+
+Understanding the relationship between these access methods:
+
+```
+Organization
+├── Project A
+│   ├── Measurement Layer 1
+│   │   ├── Measurement 1
+│   │   ├── Measurement 2
+│   │   └── Measurement 3
+│   └── Measurement Layer 2
+│       ├── Measurement 4
+│       └── Measurement 5
+└── Project B
+    ├── Measurement Layer 3
+    │   ├── Measurement 6
+    │   └── Measurement 7
+    └── Measurement Layer 4
+        └── Measurement 8
+```
+
+## Getting Started
+
+Before accessing measurements, ensure you have:
+
+- Valid authentication credentials (see [Authentication Guide](/pages/auth/overview))
+- Access to at least one organization and project
+- Understanding of the project-centric API structure (see [Getting Started](/pages/getting-started))
+
+## Common Use Cases
+
+<AccordionGroup>
+  <Accordion title="Real-time Monitoring Dashboard">
+    **Approach:** Organization-level + filtering by recent timestamps
+    
+    **Implementation:** Use organization measurements with `query=created_at>today` and `sort=-created_at`
+    
+    **Best for:** Executive dashboards showing current status across all projects
+  </Accordion>
+
+  <Accordion title="Project Progress Report">
+    **Approach:** Project-level measurements
+    
+    **Implementation:** Get all measurements for specific project, group by layer type
+    
+    **Best for:** Project managers tracking progress on specific initiatives
+  </Accordion>
+
+</AccordionGroup>
+
+## Next Steps
+
+Ready to start retrieving measurements? Choose your approach:
+
+- **[Measurements Workflow Guide](/pages/measurements/workflow)** - Complete step-by-step implementation guide for all three approaches
+- **[API Reference](/api-reference)** - Detailed endpoint documentation
+- **[Getting Started](/pages/getting-started)** - Learn about the API structure and project concepts
+
+<Note>
+All measurement endpoints follow the same query parameter patterns (skip, limit, sort, query) described in the [Getting Started guide](/pages/getting-started#request-and-response-structure) for consistent filtering and pagination.
+</Note>
