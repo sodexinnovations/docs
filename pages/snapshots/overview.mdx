@@ -1,0 +1,89 @@
+---
+title: "Snapshot Upload Overview"
+description: "Learn about the snapshot upload workflow for point cloud data"
+---
+
+<Warning>
+**Important Disclaimer:** This documentation describes the conceptual workflow for snapshot uploads. For actual implementations, each integration will receive dedicated endpoints and customized workflows. Please contact Sodex directly to discuss your specific integration requirements and obtain the appropriate API endpoints for your use case.
+</Warning>
+
+## Overview
+
+The Snapshot Upload API provides a comprehensive workflow for uploading point cloud data to the platform. This system allows you to manage projects and create snapshots containing point cloud data through a structured, multi-step process.
+
+## Base URL
+
+**Production:** `https://api.sodex.cloud`
+
+## Interactive API Documentation
+
+Complete API documentation with interactive examples is available at: `https://api.sodex.cloud/docs`
+
+## Authentication
+
+All endpoints require authentication. See the [Authentication section](/pages/auth/overview) for detailed information on how to authenticate your requests.
+
+## Key Concepts
+
+### Projects
+
+Projects are containers that organize your snapshot data. You must be a member of a project to upload snapshots to it. The API supports cloud-only projects for snapshot uploads.
+
+### Snapshots
+
+Snapshots represent individual point cloud captures within a project. Each snapshot contains:
+
+- Metadata about the capture (name, location, timing)
+- A LAZ file containing the actual point cloud data
+- Processing status information
+
+## Workflow Overview
+
+The snapshot upload process follows these main steps:
+
+<Steps>
+  <Step title="Get Projects">
+    Retrieve all projects that you have access to within your organization.
+  </Step>
+  <Step title="Create Snapshot">
+    Create a new snapshot record in the selected project with metadata.
+  </Step>
+  <Step title="Get Upload Credentials">
+    Obtain temporary S3 credentials for uploading your point cloud data.
+  </Step>
+  <Step title="Upload Data">
+    Upload your LAZ file to S3 using the provided credentials.
+  </Step>
+  <Step title="Commit Snapshot">
+    Finalize the snapshot by providing the S3 key of your uploaded file.
+  </Step>
+</Steps>
+
+## Supported File Formats
+
+- **LAZ files**: Compressed LAS format for point cloud data
+
+## Data Requirements
+
+### Location Information
+
+Snapshots can include optional location data:
+- Latitude and longitude coordinates
+- UTM zone number (1-60)
+- UTM hemisphere (N or S)
+
+If location data is not provided, it will be calculated automatically by the system.
+
+### Timing Information
+
+You can optionally provide:
+- Start capture timestamp
+- End capture timestamp
+
+All timestamps should be provided in UTC timezone using ISO 8601 format.
+
+## Next Steps
+
+- [Workflow Guide](/pages/snapshots/workflow) - Detailed step-by-step implementation guide
+- [API Endpoints](/pages/snapshots/endpoints) - Complete endpoint reference with examples
+- [Authentication](/pages/auth/overview) - Learn how to authenticate your API requests

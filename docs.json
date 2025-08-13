@@ -34,6 +34,14 @@
               "pages/auth/endpoints",
               "pages/auth/pkce"
             ]
+          },
+          {
+            "group": "Snapshot Upload",
+            "pages": [
+              "pages/snapshots/overview",
+              "pages/snapshots/workflow",
+              "pages/snapshots/endpoints"
+            ]
           }
         ]
       },

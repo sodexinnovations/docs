@@ -1,0 +1,430 @@
+---
+title: "API Endpoints Reference"
+description: "Complete reference for snapshot upload API endpoints"
+---
+
+<Warning>
+**Integration-Specific Endpoints:** The endpoints described here are conceptual examples. Each integration partnership will receive dedicated, customized API endpoints designed for their specific use case and requirements. Please contact Sodex to obtain your integration-specific endpoints and documentation.
+</Warning>
+
+## Authentication
+
+All endpoints require authentication using Bearer token in the Authorization header. See the [Authentication Guide](/pages/auth/overview) for details on obtaining access tokens.
+
+```http
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+## Projects
+
+### Get Organization Projects
+
+Get all projects that the authenticated user is a member of within their organization.
+
+#### Endpoint
+
+```http
+GET /v2/organizations/me/projects
+```
+
+#### Query Parameters
+
+<ParamField query="skip" type="integer" default="0">
+  Skip the first n results
+</ParamField>
+
+<ParamField query="limit" type="integer" default="200" max="200">
+  Limit the number of results
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort the results. Use +/- to sort ascending/descending. Separate multiple fields with commas.
+</ParamField>
+
+<ParamField query="query" type="string">
+  Filter results using query syntax. Use operators like `=`, `!=`, `>`, `<`, `*` (contains), `!` (not contains)
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="array">
+  Array of project objects
+  <Expandable title="Project Object">
+    <ResponseField name="id" type="string">
+      Unique project identifier (MongoDB ObjectID)
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Project display name
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination information
+  <Expandable title="Pagination">
+    <ResponseField name="page" type="integer">
+      Current page number
+    </ResponseField>
+    <ResponseField name="limit" type="integer">
+      Results per page
+    </ResponseField>
+    <ResponseField name="total" type="integer">
+      Total number of projects
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Organization Projects](/api-reference/projects/get-my-organizations-projects) endpoint in the API documentation.
+</Note>
+
+### Get Project by ID
+
+Get a specific project by its unique identifier.
+
+#### Endpoint
+
+```http
+GET /v2/projects/{project_id}
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="string" required>
+  Unique project identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project](/api-reference/projects/get-project-by-id) endpoint in the API documentation.
+</Note>
+
+## Snapshots
+
+### Get Project Snapshots
+
+Get all snapshots for a specific project that the authenticated user has access to.
+
+#### Endpoint
+
+```http
+GET /v2/projects/{project_id}/snapshots
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="string" required>
+  Unique project identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Project Snapshots](/api-reference/snapshots/get-snapshots-by-project-id) endpoint in the API documentation.
+</Note>
+
+### Create Snapshot
+
+Create a new snapshot in the specified project. Only cloud-only projects are supported for snapshot uploads.
+
+#### Endpoint
+
+```http
+POST /v2/projects/{project_id}/snapshots
+```
+
+#### Path Parameters
+
+<ParamField path="project_id" type="string" required>
+  Unique project identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+#### Request Body
+
+<ParamField body="name" type="string" required>
+  Display name for the snapshot
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic location of the snapshot capture (optional)
+  <Expandable title="location">
+    <ParamField body="latitude" type="number">
+      Latitude coordinate in decimal degrees
+    </ParamField>
+    <ParamField body="longitude" type="number">
+      Longitude coordinate in decimal degrees
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="utm_zone_nr" type="number" required>
+  UTM zone number (1-60)
+</ParamField>
+
+<ParamField body="utm_hemisphere" type="string" required>
+  UTM hemisphere: "N" (North) or "S" (South)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description of the snapshot
+</ParamField>
+
+<ParamField body="start_capture_at" type="string">
+  Start time of data capture in UTC ISO 8601 format (e.g., "2025-01-22T10:00:00Z")
+</ParamField>
+
+<ParamField body="end_capture_at" type="string">
+  End time of data capture in UTC ISO 8601 format (e.g., "2025-01-22T12:00:00Z")
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="object">
+  Created snapshot object
+  <Expandable title="Snapshot Object">
+    <ResponseField name="id" type="string">
+      Unique snapshot identifier (MongoDB ObjectID)
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Snapshot display name
+    </ResponseField>
+    <ResponseField name="project_id" type="string">
+      Parent project identifier
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Current snapshot status (e.g., "created")
+    </ResponseField>
+    <ResponseField name="snapshot_source" type="string">
+      Source of the snapshot (e.g., "api")
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      Creation timestamp in UTC ISO 8601 format
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+For complete API reference including request/response schemas, see the [Create Snapshot](/api-reference/snapshots/create-snapshot) endpoint in the API documentation.
+</Note>
+
+### Get Snapshot by ID
+
+Get a specific snapshot by its unique identifier.
+
+#### Endpoint
+
+```http
+GET /v2/snapshots/{snapshot_id}
+```
+
+#### Path Parameters
+
+<ParamField path="snapshot_id" type="string" required>
+  Unique snapshot identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+<Note>
+For complete API reference including request/response schemas, see the [Get Snapshot](/api-reference/snapshots/get-snapshot-by-id) endpoint in the API documentation.
+</Note>
+
+### Get S3 Upload Credentials
+
+Get temporary S3 credentials for uploading snapshot data. Credentials are valid for 4 hours.
+
+#### Endpoint
+
+```http
+GET /v2/snapshots/{snapshot_id}/s3-upload-credentials
+```
+
+#### Path Parameters
+
+<ParamField path="snapshot_id" type="string" required>
+  Unique snapshot identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="object">
+  S3 upload credentials
+  <Expandable title="S3 Credentials">
+    <ResponseField name="access_key_id" type="string">
+      AWS access key ID for temporary credentials
+    </ResponseField>
+    <ResponseField name="access_key_secret" type="string">
+      AWS secret access key for temporary credentials
+    </ResponseField>
+    <ResponseField name="session_token" type="string">
+      AWS session token for temporary credentials
+    </ResponseField>
+    <ResponseField name="region" type="string">
+      AWS S3 region (eu-central-1 or us-east-1)
+    </ResponseField>
+    <ResponseField name="bucket" type="string">
+      S3 bucket name (sodex-integrations)
+    </ResponseField>
+    <ResponseField name="s3_prefix" type="string">
+      S3 prefix path for uploads (user only has access to this prefix)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+S3 credentials expire after 4 hours. If your upload takes longer, request new credentials using this endpoint.
+</Warning>
+
+### Commit Snapshot
+
+Commit a snapshot with the uploaded data. This finalizes the snapshot creation process.
+
+#### Endpoint
+
+```http
+POST /v2/snapshots/{snapshot_id}/commit
+```
+
+#### Path Parameters
+
+<ParamField path="snapshot_id" type="string" required>
+  Unique snapshot identifier (24-character MongoDB ObjectID)
+</ParamField>
+
+#### Request Body
+
+<ParamField body="laz_s3_key" type="string" required>
+  S3 key (path) of the uploaded LAZ file within the provided S3 prefix
+</ParamField>
+
+#### Response
+
+<ResponseField name="data" type="object">
+  Updated snapshot object
+  <Expandable title="Committed Snapshot">
+    <ResponseField name="id" type="string">
+      Unique snapshot identifier
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Snapshot display name
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Updated status (e.g., "committed")
+    </ResponseField>
+    <ResponseField name="laz_s3_key" type="string">
+      S3 key of the committed LAZ file
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      Last update timestamp in UTC ISO 8601 format
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Handling
+
+The API uses standard HTTP status codes to indicate success or failure of requests.
+
+### HTTP Status Codes
+
+<AccordionGroup>
+  <Accordion title="200 - OK">
+    Request was successful. Response body contains the requested data.
+  </Accordion>
+
+  <Accordion title="400 - Bad Request">
+    Request validation failed. Common causes:
+    - Missing required fields
+    - Invalid field values (e.g., UTM zone not between 1-60)
+    - Malformed JSON in request body
+    - Invalid timestamp format
+
+    **Example Response:**
+    ```json
+    {
+      "detail": [
+        {
+          "loc": ["body", "utm_zone_nr"],
+          "msg": "ensure this value is greater than or equal to 1",
+          "type": "value_error.number.not_ge"
+        }
+      ]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="401 - Unauthorized">
+    Authentication failed or token expired. Ensure you're providing a valid Bearer token in the Authorization header.
+
+    **Solution:** Refresh your access token using the authentication flow.
+  </Accordion>
+
+  <Accordion title="403 - Forbidden">
+    Insufficient permissions for the requested resource. Common causes:
+    - Not a member of the target project
+    - Attempting to access resources outside your organization
+    - Trying to upload to a non-cloud project
+
+    **Solution:** Verify your project membership and permissions.
+  </Accordion>
+
+  <Accordion title="404 - Not Found">
+    Requested resource doesn't exist. Common causes:
+    - Invalid project ID or snapshot ID
+    - Resource was deleted
+    - Typo in the endpoint URL
+
+    **Solution:** Verify the resource ID and check that the resource exists.
+  </Accordion>
+
+  <Accordion title="422 - Unprocessable Entity">
+    Request was well-formed but contains semantic errors. This typically occurs during validation of complex business rules.
+  </Accordion>
+
+  <Accordion title="500 - Internal Server Error">
+    Server-side error occurred. These are typically temporary issues.
+
+    **Solution:** Retry the request after a brief delay. If the problem persists, contact support.
+  </Accordion>
+</AccordionGroup>
+
+### Error Response Format
+
+All error responses follow a consistent format:
+
+```json
+{
+  "detail": "Error description"
+}
+```
+
+For validation errors (400 status), the response includes detailed field-level errors:
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "field_name"],
+      "msg": "Specific error message",
+      "type": "error_type"
+    }
+  ]
+}
+```
+
+## Rate Limiting
+
+The API implements rate limiting to ensure fair usage. If you exceed the rate limits, you'll receive a `429 Too Many Requests` response.
+
+<Note>
+Rate limiting details and specific limits are available in the main API documentation.
+</Note>
+
+## Best Practices
+
+1. **Always handle errors gracefully** - Implement proper error handling for all status codes
+2. **Use pagination** - For endpoints that return lists, use pagination parameters to avoid timeouts
+3. **Monitor credential expiration** - S3 credentials expire after 4 hours
+4. **Validate data client-side** - Check required fields and formats before making API calls
+5. **Implement retry logic** - For temporary failures (5xx errors), implement exponential backoff
+6. **Use specific error messages** - The API provides detailed error information to help debugging
+
+## Next Steps
+
+- [Workflow Guide](/pages/snapshots/workflow) - Step-by-step implementation guide
+- [Overview](/pages/snapshots/overview) - Understand the snapshot upload system
+- [Authentication](/pages/auth/overview) - Learn about API authentication

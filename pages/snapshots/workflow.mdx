@@ -1,0 +1,357 @@
+---
+title: "Snapshot Upload Workflow"
+description: "Step-by-step guide for uploading point cloud snapshots"
+---
+
+<Warning>
+**Implementation Notice:** This is a conceptual workflow guide. Actual integrations will receive dedicated, customized endpoints and workflows tailored to specific requirements. Contact Sodex to discuss your integration needs and receive your dedicated API endpoints.
+</Warning>
+
+## Complete Upload Workflow
+
+This guide walks you through the complete process of uploading a point cloud snapshot to the platform. The workflow consists of five sequential steps that must be completed in order.
+
+## Prerequisites
+
+- Valid authentication credentials (see [Authentication Guide](/pages/auth/overview))
+- Access to at least one project in your organization
+- A LAZ file containing your point cloud data
+
+## Step 1: Get Organization Projects
+
+First, retrieve all projects that you have access to within your organization.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/organizations/me/projects" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.sodex.cloud/v2/organizations/me/projects',
+    headers=headers
+)
+
+projects = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "Point Cloud Integration Project"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 1
+  }
+}
+```
+
+## Step 2: Create New Snapshot
+
+Create a new snapshot record in your selected project. Choose a cloud-only project for best compatibility.
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.sodex.cloud/v2/projects/{project_id}/snapshots" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Point Cloud Capture 2025-01-22",
+    "location": {
+      "latitude": 51.1656,
+      "longitude": 10.4515
+    },
+    "utm_zone_nr": 32,
+    "utm_hemisphere": "N",
+    "description": "Point cloud data captured on site",
+    "start_capture_at": "2025-01-22T10:00:00Z",
+    "end_capture_at": "2025-01-22T12:00:00Z"
+  }'
+```
+
+```python Python
+import requests
+from datetime import datetime
+
+snapshot_data = {
+    "name": "Point Cloud Capture 2025-01-22",
+    "location": {
+        "latitude": 51.1656,
+        "longitude": 10.4515
+    },
+    "utm_zone_nr": 32,
+    "utm_hemisphere": "N",
+    "description": "Point cloud data captured on site",
+    "start_capture_at": "2025-01-22T10:00:00Z",
+    "end_capture_at": "2025-01-22T12:00:00Z"
+}
+
+response = requests.post(
+    f'https://api.sodex.cloud/v2/projects/{project_id}/snapshots',
+    headers=headers,
+    json=snapshot_data
+)
+
+snapshot = response.json()
+```
+</CodeGroup>
+
+### Request Parameters
+
+<ParamField path="name" type="string" required>
+  Display name for the snapshot
+</ParamField>
+
+<ParamField path="location" type="object">
+  Geographic location of the snapshot capture
+  <Expandable title="location">
+    <ParamField path="latitude" type="number">
+      Latitude coordinate
+    </ParamField>
+    <ParamField path="longitude" type="number">
+      Longitude coordinate
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="utm_zone_nr" type="number" required>
+  UTM zone number (1-60)
+</ParamField>
+
+<ParamField path="utm_hemisphere" type="string" required>
+  UTM hemisphere: "N" or "S"
+</ParamField>
+
+<ParamField path="description" type="string">
+  Optional description of the snapshot
+</ParamField>
+
+<ParamField path="start_capture_at" type="string">
+  Start time of data capture in UTC ISO 8601 format
+</ParamField>
+
+<ParamField path="end_capture_at" type="string">
+  End time of data capture in UTC ISO 8601 format
+</ParamField>
+
+**Response:**
+```json
+{
+  "data": {
+    "id": "507f1f77bcf86cd799439022",
+    "name": "Point Cloud Capture 2025-01-22",
+    "project_id": "507f1f77bcf86cd799439011",
+    "status": "created",
+    "snapshot_source": "api",
+    "created_at": "2025-01-22T10:00:00Z"
+  }
+}
+```
+
+## Step 3: Get S3 Upload Credentials
+
+Request temporary S3 credentials for uploading your point cloud file. These credentials are valid for 4 hours.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.sodex.cloud/v2/snapshots/{snapshot_id}/s3-upload-credentials" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+response = requests.get(
+    f'https://api.sodex.cloud/v2/snapshots/{snapshot_id}/s3-upload-credentials',
+    headers=headers
+)
+
+credentials = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "data": {
+    "access_key_id": "AKIA...",
+    "access_key_secret": "secret_key",
+    "session_token": "session_token",
+    "region": "eu-central-1",
+    "bucket": "sodex-integrations",
+    "s3_prefix": "uploads/507f1f77bcf86cd799439022/"
+  }
+}
+```
+
+<Note>
+The S3 credentials include a specific prefix that restricts your upload access to only your snapshot's directory. You can only upload files within this prefix path.
+</Note>
+
+## Step 4: Upload Snapshot Data
+
+Upload your LAZ file to S3 using the provided credentials. The file must be uploaded within the specified S3 prefix.
+
+<CodeGroup>
+```python Python (boto3)
+import boto3
+
+# Initialize S3 client with temporary credentials
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=credentials['data']['access_key_id'],
+    aws_secret_access_key=credentials['data']['access_key_secret'],
+    aws_session_token=credentials['data']['session_token'],
+    region_name=credentials['data']['region']
+)
+
+# Upload your LAZ file
+s3_key = f"{credentials['data']['s3_prefix']}pointcloud_data.laz"
+bucket = credentials['data']['bucket']
+
+with open('local_pointcloud.laz', 'rb') as file:
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=s3_key,
+        Body=file
+    )
+
+print(f"File uploaded to: {s3_key}")
+```
+
+```javascript JavaScript (AWS SDK)
+import AWS from 'aws-sdk';
+import fs from 'fs';
+
+// Configure AWS SDK with temporary credentials
+AWS.config.update({
+  accessKeyId: credentials.data.access_key_id,
+  secretAccessKey: credentials.data.access_key_secret,
+  sessionToken: credentials.data.session_token,
+  region: credentials.data.region
+});
+
+const s3 = new AWS.S3();
+const s3Key = `${credentials.data.s3_prefix}pointcloud_data.laz`;
+const fileContent = fs.readFileSync('local_pointcloud.laz');
+
+const uploadParams = {
+  Bucket: credentials.data.bucket,
+  Key: s3Key,
+  Body: fileContent
+};
+
+s3.upload(uploadParams, (err, data) => {
+  if (err) {
+    console.error('Upload failed:', err);
+  } else {
+    console.log('Upload successful:', data.Location);
+  }
+});
+```
+</CodeGroup>
+
+<Warning>
+Ensure your LAZ file is uploaded within the provided S3 prefix. Files uploaded outside this prefix will not be accessible and the commit step will fail.
+</Warning>
+
+## Step 5: Commit Snapshot
+
+Complete the upload process by committing the snapshot with the S3 key of your uploaded file.
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.sodex.cloud/v2/snapshots/{snapshot_id}/commit" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "laz_s3_key": "uploads/507f1f77bcf86cd799439022/pointcloud_data.laz"
+  }'
+```
+
+```python Python
+commit_data = {
+    "laz_s3_key": s3_key  # Use the same key from upload step
+}
+
+response = requests.post(
+    f'https://api.sodex.cloud/v2/snapshots/{snapshot_id}/commit',
+    headers=headers,
+    json=commit_data
+)
+
+committed_snapshot = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "data": {
+    "id": "507f1f77bcf86cd799439022",
+    "name": "Point Cloud Capture 2025-01-22",
+    "status": "committed",
+    "laz_s3_key": "uploads/507f1f77bcf86cd799439022/pointcloud_data.laz",
+    "updated_at": "2025-01-22T12:00:00Z"
+  }
+}
+```
+
+## Error Handling
+
+The API uses standard HTTP status codes. Common scenarios include:
+
+<AccordionGroup>
+  <Accordion title="400 - Bad Request">
+    Validation errors in request body. Check that:
+    - Required fields are provided
+    - UTM zone is between 1-60
+    - UTM hemisphere is "N" or "S"
+    - Timestamps are in valid ISO 8601 format
+  </Accordion>
+
+  <Accordion title="401 - Unauthorized">
+    Authentication token is missing or invalid. Refresh your access token.
+  </Accordion>
+
+  <Accordion title="403 - Forbidden">
+    Insufficient permissions. Ensure you're a member of the target project.
+  </Accordion>
+
+  <Accordion title="404 - Not Found">
+    Resource doesn't exist. Verify project ID or snapshot ID is correct.
+  </Accordion>
+
+  <Accordion title="500 - Internal Server Error">
+    Server-side error. Contact support if the issue persists.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+1. **Check Project Access**: Always verify you have access to a project before creating snapshots
+2. **Use Descriptive Names**: Include dates, locations, or other identifying information in snapshot names
+3. **Monitor Upload Progress**: For large files, implement progress tracking in your upload code
+4. **Handle Timeouts**: S3 credentials expire after 4 hours - request new ones if needed
+5. **Validate Files**: Ensure your LAZ files are valid before uploading
+
+## Next Steps
+
+- [API Endpoints Reference](/pages/snapshots/endpoints) - Complete endpoint documentation
+- [Authentication Guide](/pages/auth/overview) - Learn about API authentication
+- [Error Handling](/pages/snapshots/endpoints#error-handling) - Detailed error scenarios
