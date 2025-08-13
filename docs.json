@@ -24,22 +24,20 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
+          "anchor": "Mintlify Documentation",
           "href": "https://mintlify.com/docs",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Helpcenter",
+          "href": "https://sodexinnovations.zendesk.com/hc/en-us#!",
+          "icon": "book-open-cover"
         }
       ]
-    }
+    },
+    "pages": [
+      "pages/getting-started"
+    ]
   },
   "logo": {
     "light": "/sodex-logo.png",
@@ -49,14 +47,9 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@sodex-innovations.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "footer": {
     "socials": {
