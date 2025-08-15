@@ -1,21 +1,33 @@
 ---
 title: "Snapshot Upload Workflow"
-description: "Step-by-step guide for uploading point cloud snapshots"
+description: "Step-by-step guide for third-party integrations uploading point cloud snapshots"
 ---
 
 <Warning>
-**Implementation Notice:** This is a conceptual workflow guide. Actual integrations will receive dedicated, customized endpoints and workflows tailored to specific requirements. Contact Sodex to discuss your integration needs and receive your dedicated API endpoints.
+**Third-Party Integration Workflow:** This guide describes the snapshot upload workflow specifically for third-party integrations. Each integration partner will receive dedicated endpoints with their unique integration prefix.
 </Warning>
 
 ## Complete Upload Workflow
 
-This guide walks you through the complete process of uploading a point cloud snapshot to the platform. The workflow consists of five sequential steps that must be completed in order.
+This guide walks you through the complete process of uploading a point cloud snapshot (.laz file) to the platform. The workflow consists of five sequential steps that must be completed in order.
 
 ## Prerequisites
 
 - Valid authentication credentials (see [Authentication Guide](/pages/auth/overview))
 - Access to at least one project in your organization
 - A LAZ file containing your point cloud data
+- Your unique integration prefix provided by Sodex
+
+## Base URL Pattern
+
+All endpoints follow this pattern:
+```
+https://api.sodex.cloud/{integration-prefix}/...
+```
+
+<Note>
+Replace `{integration-prefix}` with your specific integration prefix. This prefix will be provided by Sodex when setting up your integration partnership.
+</Note>
 
 ## Step 1: Get Organization Projects
 
@@ -23,7 +35,7 @@ First, retrieve all projects that you have access to within your organization.
 
 <CodeGroup>
 ```bash cURL
-curl -X GET "https://api.sodex.cloud/v2/organizations/me/projects" \
+curl -X GET "https://api.sodex.cloud/{integration-prefix}/organizations/me/projects" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json"
 ```
@@ -37,7 +49,7 @@ headers = {
 }
 
 response = requests.get(
-    'https://api.sodex.cloud/v2/organizations/me/projects',
+    f'https://api.sodex.cloud/{integration-prefix}/organizations/me/projects',
     headers=headers
 )
 
@@ -45,22 +57,9 @@ projects = response.json()
 ```
 </CodeGroup>
 
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": "507f1f77bcf86cd799439011",
-      "name": "Point Cloud Integration Project"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 1
-  }
-}
-```
+<Note>
+The actual response structure will depend on your specific integration configuration. Sodex will provide you with the exact response format for your integration.
+</Note>
 
 ## Step 2: Create New Snapshot
 
@@ -68,7 +67,7 @@ Create a new snapshot record in your selected project. Choose a cloud-only proje
 
 <CodeGroup>
 ```bash cURL
-curl -X POST "https://api.sodex.cloud/v2/projects/{project_id}/snapshots" \
+curl -X POST "https://api.sodex.cloud/{integration-prefix}/projects/{project_id}/snapshots" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -103,7 +102,7 @@ snapshot_data = {
 }
 
 response = requests.post(
-    f'https://api.sodex.cloud/v2/projects/{project_id}/snapshots',
+    f'https://api.sodex.cloud/{integration-prefix}/projects/{project_id}/snapshots',
     headers=headers,
     json=snapshot_data
 )
@@ -150,19 +149,9 @@ snapshot = response.json()
   End time of data capture in UTC ISO 8601 format
 </ParamField>
 
-**Response:**
-```json
-{
-  "data": {
-    "id": "507f1f77bcf86cd799439022",
-    "name": "Point Cloud Capture 2025-01-22",
-    "project_id": "507f1f77bcf86cd799439011",
-    "status": "created",
-    "snapshot_source": "api",
-    "created_at": "2025-01-22T10:00:00Z"
-  }
-}
-```
+<Note>
+The actual response structure will depend on your specific integration configuration. Sodex will provide you with the exact response format for your integration.
+</Note>
 
 ## Step 3: Get S3 Upload Credentials
 
@@ -170,14 +159,14 @@ Request temporary S3 credentials for uploading your point cloud file. These cred
 
 <CodeGroup>
 ```bash cURL
-curl -X GET "https://api.sodex.cloud/v2/snapshots/{snapshot_id}/s3-upload-credentials" \
+curl -X GET "https://api.sodex.cloud/{integration-prefix}/snapshots/{snapshot_id}/s3-upload-credentials" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json"
 ```
 
 ```python Python
 response = requests.get(
-    f'https://api.sodex.cloud/v2/snapshots/{snapshot_id}/s3-upload-credentials',
+    f'https://api.sodex.cloud/{integration-prefix}/snapshots/{snapshot_id}/s3-upload-credentials',
     headers=headers
 )
 
@@ -185,19 +174,9 @@ credentials = response.json()
 ```
 </CodeGroup>
 
-**Response:**
-```json
-{
-  "data": {
-    "access_key_id": "AKIA...",
-    "access_key_secret": "secret_key",
-    "session_token": "session_token",
-    "region": "eu-central-1",
-    "bucket": "sodex-integrations",
-    "s3_prefix": "uploads/507f1f77bcf86cd799439022/"
-  }
-}
-```
+<Note>
+The actual response structure will depend on your specific integration configuration. Sodex will provide you with the exact response format for your integration.
+</Note>
 
 <Note>
 The S3 credentials include a specific prefix that restricts your upload access to only your snapshot's directory. You can only upload files within this prefix path.
@@ -276,11 +255,11 @@ Complete the upload process by committing the snapshot with the S3 key of your u
 
 <CodeGroup>
 ```bash cURL
-curl -X POST "https://api.sodex.cloud/v2/snapshots/{snapshot_id}/commit" \
+curl -X POST "https://api.sodex.cloud/{integration-prefix}/snapshots/{snapshot_id}/commit" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "laz_s3_key": "uploads/507f1f77bcf86cd799439022/pointcloud_data.laz"
+    "laz_s3_key": "uploads/{snapshot_id}/pointcloud_data.laz"
   }'
 ```
 
@@ -290,7 +269,7 @@ commit_data = {
 }
 
 response = requests.post(
-    f'https://api.sodex.cloud/v2/snapshots/{snapshot_id}/commit',
+    f'https://api.sodex.cloud/{integration-prefix}/snapshots/{snapshot_id}/commit',
     headers=headers,
     json=commit_data
 )
@@ -299,18 +278,9 @@ committed_snapshot = response.json()
 ```
 </CodeGroup>
 
-**Response:**
-```json
-{
-  "data": {
-    "id": "507f1f77bcf86cd799439022",
-    "name": "Point Cloud Capture 2025-01-22",
-    "status": "committed",
-    "laz_s3_key": "uploads/507f1f77bcf86cd799439022/pointcloud_data.laz",
-    "updated_at": "2025-01-22T12:00:00Z"
-  }
-}
-```
+<Note>
+The actual response structure will depend on your specific integration configuration. Sodex will provide you with the exact response format for your integration.
+</Note>
 
 ## Error Handling
 

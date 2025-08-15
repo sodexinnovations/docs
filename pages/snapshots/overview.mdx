@@ -1,23 +1,29 @@
 ---
 title: "Snapshot Upload Overview"
-description: "Learn about the snapshot upload workflow for point cloud data"
+description: "Learn about the snapshot upload workflow for third-party integrations uploading .laz files"
 ---
 
 <Warning>
-**Important Disclaimer:** This documentation describes the conceptual workflow for snapshot uploads. For actual implementations, each integration will receive dedicated endpoints and customized workflows. Please contact Sodex directly to discuss your specific integration requirements and obtain the appropriate API endpoints for your use case.
+**Third-Party Integration Notice:** This documentation describes the snapshot upload workflow specifically for third-party integrations that need to upload .laz files to the Sodex platform. Each integration partner will receive a unique integration prefix and dedicated API endpoints.
 </Warning>
 
 ## Overview
 
-The Snapshot Upload API provides a comprehensive workflow for uploading point cloud data to the platform. This system allows you to manage projects and create snapshots containing point cloud data through a structured, multi-step process.
+The Snapshot Upload API provides a comprehensive workflow for third-party integrations to upload point cloud data (.laz files) to the platform. This system allows integration partners to manage projects and create snapshots containing point cloud data through a structured, multi-step process.
 
-## Base URL
+## Base URL Pattern
 
-**Production:** `https://api.sodex.cloud`
+**Production:** `https://api.sodex.cloud/{integration-prefix}`
+
+<Note>
+Each integration partner receives a unique prefix that is prepended to all API endpoints. This prefix will be provided by Sodex when setting up your integration partnership.
+</Note>
 
 ## Interactive API Documentation
 
-Complete API documentation with interactive examples is available at: `https://api.sodex.cloud/docs`
+<Warning>
+**Integration-Specific Documentation:** The interactive API documentation and testing capabilities will be provided by Sodex for each integration partner with their specific endpoints and authentication details.
+</Warning>
 
 ## Authentication
 

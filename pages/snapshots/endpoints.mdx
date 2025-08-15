@@ -1,10 +1,10 @@
 ---
 title: "API Endpoints Reference"
-description: "Complete reference for snapshot upload API endpoints"
+description: "Complete reference for third-party integration snapshot upload API endpoints"
 ---
 
 <Warning>
-**Integration-Specific Endpoints:** The endpoints described here are conceptual examples. Each integration partnership will receive dedicated, customized API endpoints designed for their specific use case and requirements. Please contact Sodex to obtain your integration-specific endpoints and documentation.
+**Third-Party Integration Endpoints:** The endpoints described here are specifically for third-party integrations. Each integration partner will receive a unique integration prefix that is prepended to all API endpoints. Sodex will provide you with your specific integration endpoints and interactive documentation.
 </Warning>
 
 ## Authentication
@@ -15,12 +15,23 @@ All endpoints require authentication using Bearer token in the Authorization hea
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
+## Base URL Pattern
+
+All endpoints follow this pattern:
+```
+https://api.sodex.cloud/{integration-prefix}/...
+```
+
+<Note>
+Replace `{integration-prefix}` with your specific integration prefix. This prefix will be provided by Sodex when setting up your integration partnership.
+</Note>
+
 ## Projects
 
 ### Get Organization Projects
 
 <Note>
-For complete API reference including request/response schemas, see the [Get Organization Projects](/api-reference/projects/get-my-organizations-projects) endpoint in the API documentation.
+For complete API reference including request/response schemas, Sodex will provide you with integration-specific documentation and interactive testing capabilities.
 </Note>
 
 Get all projects that the authenticated user is a member of within their organization.
@@ -28,7 +39,7 @@ Get all projects that the authenticated user is a member of within their organiz
 #### Endpoint
 
 ```http
-GET /v2/organizations/me/projects
+GET /{integration-prefix}/organizations/me/projects
 ```
 
 #### Query Parameters
@@ -81,7 +92,7 @@ GET /v2/organizations/me/projects
 ### Get Project by ID
 
 <Note>
-For complete API reference including request/response schemas, see the [Get Project](/api-reference/projects/get-all-projects-in-my-organization) endpoint in the API documentation.
+For complete API reference including request/response schemas, Sodex will provide you with integration-specific documentation and interactive testing capabilities.
 </Note>
 
 Get a specific project by its unique identifier.
@@ -89,7 +100,7 @@ Get a specific project by its unique identifier.
 #### Endpoint
 
 ```http
-GET /v2/projects/{project_id}
+GET /{integration-prefix}/projects/{project_id}
 ```
 
 #### Path Parameters
@@ -103,7 +114,7 @@ GET /v2/projects/{project_id}
 ### Get Project Snapshots
 
 <Note>
-For complete API reference including request/response schemas, see the [Get Project Snapshots](/api-reference/snapshotsv2/get-project-snapshots-v2) endpoint in the API documentation.
+For complete API reference including request/response schemas, Sodex will provide you with integration-specific documentation and interactive testing capabilities.
 </Note>
 
 Get all snapshots for a specific project that the authenticated user has access to.
@@ -111,7 +122,7 @@ Get all snapshots for a specific project that the authenticated user has access 
 #### Endpoint
 
 ```http
-GET /v2/projects/{project_id}/snapshots-v2
+GET /{integration-prefix}/projects/{project_id}/snapshots-v2
 ```
 
 #### Path Parameters
@@ -123,7 +134,7 @@ GET /v2/projects/{project_id}/snapshots-v2
 ### Create Snapshot
 
 <Note>
-For complete API reference including request/response schemas, see the [Create Snapshot](/api-reference/snapshots/create-snapshot) endpoint in the API documentation.
+For complete API reference including request/response schemas, Sodex will provide you with integration-specific documentation and interactive testing capabilities.
 </Note>
 
 Create a new snapshot in the specified project. Only cloud-only projects are supported for snapshot uploads.
@@ -131,7 +142,7 @@ Create a new snapshot in the specified project. Only cloud-only projects are sup
 #### Endpoint
 
 ```http
-POST /v2/projects/{project_id}/snapshots
+POST /{integration-prefix}/projects/{project_id}/snapshots
 ```
 
 #### Path Parameters
@@ -147,7 +158,7 @@ POST /v2/projects/{project_id}/snapshots
 </ParamField>
 
 <ParamField body="location" type="object">
-  Geographic location of the snapshot capture (optional)
+  Geographic location of the snapshot capture in degrees (optional)
   <Expandable title="location">
     <ParamField body="latitude" type="number">
       Latitude coordinate in decimal degrees
@@ -207,7 +218,7 @@ POST /v2/projects/{project_id}/snapshots
 ### Get Snapshot by ID
 
 <Note>
-For complete API reference including request/response schemas, see the [Get Snapshot](/api-reference/snapshotsv2/get-snapshotv2-by-id) endpoint in the API documentation.
+For complete API reference including request/response schemas, Sodex will provide you with integration-specific documentation and interactive testing capabilities.
 </Note>
 
 Get a specific snapshot by its unique identifier.
@@ -215,7 +226,7 @@ Get a specific snapshot by its unique identifier.
 #### Endpoint
 
 ```http
-GET /v2/snapshots/{snapshot_id}
+GET /{integration-prefix}/snapshots/{snapshot_id}
 ```
 
 #### Path Parameters
@@ -231,7 +242,7 @@ Get temporary S3 credentials for uploading snapshot data. Credentials are valid 
 #### Endpoint
 
 ```http
-GET /v2/snapshots/{snapshot_id}/s3-upload-credentials
+GET /{integration-prefix}/snapshots/{snapshot_id}/s3-upload-credentials
 ```
 
 #### Path Parameters
@@ -277,7 +288,7 @@ Commit a snapshot with the uploaded data. This finalizes the snapshot creation p
 #### Endpoint
 
 ```http
-POST /v2/snapshots/{snapshot_id}/commit
+POST /{integration-prefix}/snapshots/{snapshot_id}/commit
 ```
 
 #### Path Parameters
@@ -333,18 +344,9 @@ The API uses standard HTTP status codes to indicate success or failure of reques
     - Malformed JSON in request body
     - Invalid timestamp format
 
-    **Example Response:**
-    ```json
-    {
-      "detail": [
-        {
-          "loc": ["body", "utm_zone_nr"],
-          "msg": "ensure this value is greater than or equal to 1",
-          "type": "value_error.number.not_ge"
-        }
-      ]
-    }
-    ```
+    <Note>
+    The exact error response format will depend on your specific integration configuration. Sodex will provide you with the exact error format for your integration.
+    </Note>
   </Accordion>
 
   <Accordion title="401 - Unauthorized">
@@ -384,34 +386,16 @@ The API uses standard HTTP status codes to indicate success or failure of reques
 
 ### Error Response Format
 
-All error responses follow a consistent format:
-
-```json
-{
-  "detail": "Error description"
-}
-```
-
-For validation errors (400 status), the response includes detailed field-level errors:
-
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "field_name"],
-      "msg": "Specific error message",
-      "type": "error_type"
-    }
-  ]
-}
-```
+<Note>
+The exact error response format will depend on your specific integration configuration. Sodex will provide you with the exact error format for your integration.
+</Note>
 
 ## Rate Limiting
 
 The API implements rate limiting to ensure fair usage. If you exceed the rate limits, you'll receive a `429 Too Many Requests` response.
 
 <Note>
-Rate limiting details and specific limits are available in the main API documentation.
+Rate limiting details and specific limits are available in the main API documentation provided by Sodex for your integration.
 </Note>
 
 ## Best Practices
