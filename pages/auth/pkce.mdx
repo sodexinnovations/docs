@@ -188,7 +188,7 @@ client = OAuth2Session(
 authorization_url, state = client.create_authorization_url(
     'https://api.sodex.cloud/oauth/authorize',
     redirect_uri='https://your-app.com/callback',
-    scope='sdxapi scanace'
+    scope='sdxapi ...'
 )
 
 print(f"Visit: {authorization_url}")
@@ -267,7 +267,7 @@ GET /oauth/authorize?
   client_id=your_client_id&
   redirect_uri=https://your-app.com/callback&
   response_type=code&
-  scope=sdxapi scanace&
+  scope=sdxapi ...&
   state=random_state&
   code_challenge=CODE_CHALLENGE&
   code_challenge_method=S256

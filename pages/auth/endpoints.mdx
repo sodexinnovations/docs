@@ -41,7 +41,7 @@ GET /oauth/authorize
 
 <RequestExample>
 ```bash
-GET /oauth/authorize?client_id=your_client_id&redirect_uri=https://your-app.com/callback&response_type=code&scope=sdxapi%20scanace&state=random_state&code_challenge=challenge&code_challenge_method=S256
+GET /oauth/authorize?client_id=your_client_id&redirect_uri=https://your-app.com/callback&response_type=code&scope=sdxapi%20...&state=random_state&code_challenge=challenge&code_challenge_method=S256
 ```
 </RequestExample>
 
@@ -60,7 +60,7 @@ GET /oauth/authorize?client_id=your_client_id&redirect_uri=https://your-app.com/
 </ParamField>
 
 <ParamField query="scope" type="string" required>
-  Space-separated list of requested scopes (e.g., `sdxapi scanace`)
+  Space-separated list of requested scopes (e.g., `sdxapi ...`)
 </ParamField>
 
 <ParamField query="state" type="string" required>
