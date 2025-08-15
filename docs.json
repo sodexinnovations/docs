@@ -60,11 +60,6 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Mintlify Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
           "anchor": "Helpcenter",
           "href": "https://sodexinnovations.zendesk.com/hc/en-us#!",
           "icon": "book-open-cover"
